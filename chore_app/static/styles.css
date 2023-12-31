@@ -1,0 +1,181 @@
+/* Base styles */
+body {
+    background-color: #282c34;
+    color: #bec1c7;
+    font-family: 'Roboto', sans-serif;
+    font-size: 16px;
+    margin: 0;
+}
+
+a {
+    color: #61afef;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* Headings */
+h1 {
+    margin: 10px 0;
+    color: #9955ff;
+}
+
+/* Headings */
+h2 {
+    margin: 10px 0;
+    color: #8280f5;
+}
+
+/* Headings */
+h3 {
+    margin: 10px 0;
+    color: #95b1f7;
+}
+
+/* Headings */
+h4, h5, h6 {
+    margin: 10px 0;
+    color: #b9d8f6;
+}
+
+/* Paragraphs */
+p {
+    margin: 10px 0;
+}
+
+/* Tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid #525860;
+}
+
+th, td {
+    padding: 10px;
+    text-align: left;
+    border: 1px solid #525860;
+}
+
+th {
+    background-color: #353b45;
+    color: #e5e9f0;
+}
+
+/* Buttons */
+button {
+    background-color: #528bff;
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #61afef;
+}
+
+/* Code blocks (optional) */
+code {
+    background-color: #353b45;
+    padding: 5px;
+    border-radius: 5px;
+    color: #abb2bf;
+}
+
+.rainbow-text {
+    font-size: 60px;
+    font-weight: bolder;
+    text-align: center;
+    color: transparent;
+    background-image: linear-gradient(to right, #ab3dba, #6c4ed9, #a028ca, #ff0090, #9e56f6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-fill-color: transparent;
+    animation-name: rainbow; /* Added animation-name property */
+    animation-duration: 5s; /* Added animation-duration property */
+    animation-iteration-count: infinite; /* Added animation-iteration-count property */
+    animation-timing-function: linear; /* Added animation-timing-function property */
+}
+
+@keyframes rainbow {
+    0% { background-position: 0% 0%; }
+    100% { background-position: 100% 0%; }
+}
+
+.buttonContainer {
+    display: flex;
+    justify-content: space-between;
+    height: 24px;]
+}
+.choreLeft {
+    color: white;
+    text-align: left;
+    font-size: 18px;]
+    font-weight: normal;
+}
+.choreRight {
+    text-align: right;
+    font-size: 20px;
+    font-weight: bolder;
+    color: transparent;
+    background-image: linear-gradient(to right, #ab3dba, #6c4ed9, #a028ca, #ff0090, #9e56f6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.choreRightClaimed {
+    text-align: right;
+    font-size: 20px;
+    font-weight: bolder;
+    color: transparent;
+    background-image: linear-gradient(to right, #395dd4, #0e8cb3, #088028, #409f4e, #3676b9);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.container {
+    display: flex;
+    flex-wrap: wrap;
+  }
+  
+.block {
+  flex: 1 0 400px;
+  margin: 10px;
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 15px;
+  padding: 10px;
+  padding-left: 15px;
+  padding-right: 15px;
+}
+
+.innerBlock {
+    cursor: pointer;
+    margin: 10px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    padding: 10px;
+    padding-left: 15px;
+    padding-right: 15px;
+    text-align: center;
+    color: #ffffff;
+    text-decoration: none;
+    outline: none;
+    border: none;
+}
+
+.bigblock {
+  flex: 1 0 90%;
+  min-width: 600px;
+  margin: 10px;
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 15px;
+  padding: 10px;
+  padding-left: 15px;
+  padding-right: 15px;
+}

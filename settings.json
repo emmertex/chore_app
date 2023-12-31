@@ -1,0 +1,56 @@
+[
+    {
+        "model": "chore_app.Settings", 
+        "pk": 1,
+        "fields": {
+            "key": "daily_bonus",    
+            "name": "Daily Bonus Points",
+            "value": 180
+        }
+    },
+    {
+        "model": "chore_app.Settings",
+        "pk": 2,
+        "fields": {
+            "key": "max_points",
+            "name": "Maximum Points after Daily Bonus",
+            "value": 600
+        }
+    },
+    {
+        "model": "chore_app.Settings",
+        "pk": 3,
+        "fields": {
+            "key": "min_points",
+            "name": "Minimum Points after Daily Bonus",
+            "value": -300
+        }
+    },
+    {
+        "model": "chore_app.Settings",
+        "pk": 4,
+        "fields": {
+            "key": "bonus_end_time",
+            "name": "Daily Bonus End Time (in Hours)",
+            "value": 14
+        }
+    },
+    {
+        "model": "chore_app.Settings",
+        "pk": 5,
+        "fields": {
+            "key": "bonus_percent",
+            "name": "Daily Bonus Percentage",
+            "value": 50
+        }
+    },
+    {
+        "model": "chore_app.Settings",
+        "pk": 6,
+        "fields": {
+            "key": "point_value",
+            "name": "Cents per Point",
+            "value": 10
+        }
+    }
+]

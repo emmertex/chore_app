@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<html>
+
+<head>
+    <title>{{ user.username }}'s Dashboard</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'styles.css' %}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+
+<body>
+
+    <div class="container">
+
+    <div class="bigblock">
+        <h1>{{ user.username }}'s Dashboard</h1>
+    </div>
+
+
+
+    {% if claimed_chores %}
+    <div class="block">
+        <h3>Claimed Chores Waiting for Approval</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Chore</th>
+                    <th>Points</th>
+                    <th>Claimed</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for chore_claim in claimed_chores %}
+                <tr>
+                    <td>{{ chore_claim.choreName }} <div style="font-size: smaller;">
+                      {{ chore_claim.comment }}
+                    </div></td>
+                    <td>{{ chore_claim.points }}</td>
+                    <td>{{ chore_claim.user }}</td>
+                    <td>
+                        <a href="{% url 'approve_chore_claim' chore_claim.pk 0 %}">✅</a>
+                        <a href="{% url 'approve_chore_claim' chore_claim.pk 25 %}">🆗</a>
+                        <a href="{% url 'approve_chore_claim' chore_claim.pk 50 %}">⚠️</a>
+                        <a href="{% url 'reject_chore_claim' chore_claim.pk %}">❌</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    {% if available_chores %}
+    <div class="block">
+        <h3>Available Chores</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Chore</th>
+                    <th>Points</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for chore in available_chores %}
+                <tr>
+                    <td>{{ chore.name }}</td>
+                    <td>{{ chore.points }} {% if chore.earlyBonus %} ++ {% endif %}</td>
+                    <td>
+                        <a href="{% url 'edit_chore' chore.pk %}">✏️</a>
+                        <a href="{% url 'toggle_availability' chore.pk %}" class="toggle-availability">❌
+                        </a>
+                        <a href="{% url 'delete_chore' chore.pk %}"
+                            onclick="return confirm('Are you sure you want to delete this chore?')">🗑️</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    {% if unavailable_chores %}
+    <div class="block">
+        <h3> Unavailable Chores</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Chore</th>
+                    <th>Points</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for chore in unavailable_chores %}
+                <tr>
+                    <td>{{ chore.name }}</td>
+                    <td>{{ chore.points }} {% if chore.earlyBonus %} ++ {% endif %}</td>
+                    <td>
+                        <a href="{% url 'edit_chore' chore.pk %}">✏️</a>
+                        <a href="{% url 'toggle_availability' chore.pk %}" class="toggle-availability">✅
+                        </a>
+                        <a href="{% url 'delete_chore' chore.pk %}"
+                            onclick="return confirm('Are you sure you want to delete this chore?')">🗑️</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    <div class="block">
+        <h3>Actions</h3>
+        <div class="innerBlock" onclick="if (confirm('Are you sure you want to perform this action?')) { window.location.href='{% url 'daily_action' %}' }">
+            Daily Action<br><span style="font-size: smaller;">Distribute points, and make Daily Chores available</span>
+        </div>
+        <div class="innerBlock" onclick="window.location.href='{% url 'create_chore' %}'" class="open-chore-modal">
+            Create New Chore {# For a modal #}
+        </div>
+        <div class="innerBlock" onclick="window.location.href='{% url 'settings' %}'" class="open-chore-modal">
+            Settings {# For a modal #}
+        </div>
+    </div>
+
+    <div class="block">
+        <h3> Childrens Points </h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Points</th>
+                    <th>Money</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for child in children %}
+                <tr>
+                    <td>{{ child.username }}</td>
+                    <td>{{ child.points_balance }}</td>
+                    <td>{{ child.pocket_money }}</td>
+                    <td>
+                        <a href="{% url 'point_adjustment' child.pk %}">Adjust Points</a><br>
+                        <a href="{% url 'pocket_money_adjustment' child.pk %}">Adjust Pocket Money</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="bigblock">
+        <h3>Point Log</h2>
+
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>User</th>
+                        <th>Chore</th>
+                        <th>Points Change</th>
+                        <th>Penalty</th>
+                        <th>Reason</th>
+                        <th>Approver</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for point_log in point_logs %}
+                    <tr>
+                        <td>{{ point_log.date_recorded|date:"M d, Y" }}</td>
+                        <td>{{ point_log.user.username }}</td>
+                        <td>{{ point_log.chore }}</td>
+                        <td>{{ point_log.points_change }}</td>
+                        <td>{{ point_log.penalty }} %</td>
+                        <td>{{ point_log.reason }}</td>
+                        <td>{% if point_log.approver %}{{ point_log.approver.username }}{% else %}-{% endif %}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <div class="pagination">
+                <span class="step-links">
+                    {% if point_logs.has_previous %}
+                        <a href="?page=1">&laquo; first</a>
+                        <a href="?page={{ point_logs.previous_page_number }}">previous</a>
+                    {% endif %}
+            
+                    <span class="current-page">{{ point_logs.number }}</span>
+            
+                    {% if point_logs.has_next %}
+                        <a href="?page={{ point_logs.next_page_number }}">next</a>
+                        <a href="?page={{ point_logs.paginator.num_pages }}">last &raquo;</a>
+                    {% endif %}
+                </span>
+            </div>
+    </div>
+    </div>
+
+
+
+</body>
+
+</html>
