@@ -205,9 +205,12 @@ def return_chore(request, pk):
     try:
         choreClaim = models.ChoreClaim.objects.get(pk=pk)
         if choreClaim.approved == 0:
-            chore = models.Chore.objects.get(pk=choreClaim.chore.pk)
-            chore.available = True
-            chore.save()
+            try:
+                chore = models.Chore.objects.get(pk=choreClaim.chore.pk)
+                chore.available = True
+                chore.save()
+            except:
+                pass
             choreClaim.delete()
     except:
         pass
@@ -231,9 +234,12 @@ def approve_chore_claim(request, pk, penalty):
 def reject_chore_claim(request, pk):
     try:
         choreClaim = models.ChoreClaim.objects.get(pk=pk)
-        chore = models.Chore.objects.get(pk=choreClaim.chore.pk)
-        chore.available = True
-        chore.save()
+        try:
+            chore = models.Chore.objects.get(pk=choreClaim.chore.pk)
+            chore.available = True
+            chore.save()
+        except:
+            pass
         models.PointLog.objects.create(user=choreClaim.user, points_change=0, penalty=100, reason='Rejected', chore=choreClaim.choreName, approver=request.user)
         choreClaim.delete()
     except:
