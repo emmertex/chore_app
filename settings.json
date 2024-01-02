@@ -64,7 +64,7 @@
     }    ,
     {
         "model": "chore_app.Settings",
-        "pk": 7,
+        "pk": 8,
         "fields": {
             "key": "incomplete_chores_penalty",
             "name": "Incomplete Chores Penalty Percentage",
