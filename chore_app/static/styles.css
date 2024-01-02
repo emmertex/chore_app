@@ -90,31 +90,28 @@ code {
     font-weight: bolder;
     text-align: center;
     color: transparent;
-    background-image: linear-gradient(to right, #ab3dba, #6c4ed9, #a028ca, #ff0090, #9e56f6);
+    background-image: linear-gradient(45deg, #5e66ff,#cd5aff, #ff5cb0,#cd5aff,#5e66ff);
+    background-size: 300% auto;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    text-fill-color: transparent;
-    animation-name: rainbow; /* Added animation-name property */
-    animation-duration: 5s; /* Added animation-duration property */
-    animation-iteration-count: infinite; /* Added animation-iteration-count property */
-    animation-timing-function: linear; /* Added animation-timing-function property */
+    animation-name: rainbow;
+    animation-duration: 4s;
+    animation-iteration-count: infinite;
+    animation-timing-function: linear;
 }
 
-@keyframes rainbow {
-    0% { background-position: 0% 0%; }
-    100% { background-position: 100% 0%; }
-}
+
 
 .buttonContainer {
     display: flex;
     justify-content: space-between;
-    height: 24px;]
+    height: 24px;
 }
 .choreLeft {
     color: white;
     text-align: left;
-    font-size: 18px;]
+    font-size: 18px;
     font-weight: normal;
 }
 .choreRight {
@@ -122,10 +119,15 @@ code {
     font-size: 20px;
     font-weight: bolder;
     color: transparent;
-    background-image: linear-gradient(to right, #ab3dba, #6c4ed9, #a028ca, #ff0090, #9e56f6);
+    background-image: linear-gradient(45deg, #5e66ff,#cd5aff, #ff5cb0,#cd5aff,#5e66ff);
+    background-size: 300% auto;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+    animation-name: rainbow;
+    animation-duration: 4s;
+    animation-iteration-count: infinite;
+    animation-timing-function: linear;
 }
 
 .choreRightClaimed {
@@ -133,12 +135,21 @@ code {
     font-size: 20px;
     font-weight: bolder;
     color: transparent;
-    background-image: linear-gradient(to right, #395dd4, #0e8cb3, #088028, #409f4e, #3676b9);
+    background-image: linear-gradient(45deg, #395dd4, #0eb334, #09a1d8, #aaec24, #395dd4);
+    background-size: 300% auto;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+    animation-name: rainbow;
+    animation-duration: 4s;
+    animation-iteration-count: infinite;
+    animation-timing-function: linear;
 }
 
+@keyframes rainbow {
+    0% { background-position: 200% 50%; }
+    100% { background-position: -100% 50%; }
+}
 .container {
     display: flex;
     flex-wrap: wrap;
@@ -167,6 +178,37 @@ code {
     text-decoration: none;
     outline: none;
     border: none;
+    position: relative;
+}
+
+.innerBlock.v0 {
+    overflow: hidden;
+    animation: flashLine 2s infinite;
+    background: linear-gradient(70deg, transparent,  gold 40px, transparent, transparent);
+    background-size: 200% auto;   
+}
+
+.innerBlock.v1 {
+    overflow: hidden;
+    animation: flashLine 2s infinite;
+    background: linear-gradient(70deg, transparent,  rgb(150, 150, 150) 40px, transparent, transparent);
+    background-size: 200% auto;   
+}
+
+.innerBlock.v2 {
+    overflow: hidden;
+    animation: flashLine 2s infinite;
+    background: linear-gradient(70deg, transparent,  rgb(255, 155, 84) 40px, transparent, transparent);
+    background-size: 200% auto;   
+}
+
+@keyframes flashLine {
+    0% {
+        background-position: -100% 0;
+    }
+    100% {
+        background-position: 100% 0;
+    }
 }
 
 .bigblock {
