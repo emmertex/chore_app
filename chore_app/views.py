@@ -3,7 +3,6 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import get_user_model
-from django.shortcuts import get_object_or_404
 from django.core.paginator import Paginator
 from django.db.models import Sum
 import chore_app.forms as forms
@@ -48,15 +47,18 @@ def settings(request):
     
 @login_required
 def edit_settings(request, pk):
-    settings = get_object_or_404(models.Settings, pk=pk)
-    if request.method == 'POST':
-        form = forms.EditSettingsForm(request.POST, instance=settings)
-        if form.is_valid():
-            form.save()
-            return redirect('settings')
-    else:
-        form = forms.EditSettingsForm(instance=models.Settings.objects.get(pk=pk))
-    return render(request, 'edit_settings.html', {'form': form, 'settings': models.Settings.objects.get(pk=pk)})
+    try:
+        settings = models.Settings.objects.get(pk=pk)
+        if request.method == 'POST':
+            form = forms.EditSettingsForm(request.POST, instance=settings)
+            if form.is_valid():
+                form.save()
+                return redirect('settings')
+        else:
+            form = forms.EditSettingsForm(instance=models.Settings.objects.get(pk=pk))
+        return render(request, 'edit_settings.html', {'form': form, 'settings': models.Settings.objects.get(pk=pk)})
+    except:
+        return redirect('parent_profile')
 
 @login_required
 def parent_profile(request):
@@ -131,93 +133,111 @@ def create_chore(request):
 
 @login_required
 def edit_chore(request, pk):
-    chore = get_object_or_404(models.Chore, pk=pk)
-    if request.method == 'POST':
-        form = forms.EditChoreForm(request.POST, instance=chore)
-        if form.is_valid():
-            form.save()
-            return redirect('parent_profile')
-    else:
-        form = forms.EditChoreForm(instance=chore)
-    return render(request, 'edit_chore.html', {'form': form, 'chore': chore})
+    try:
+        chore = models.Chore.objects.get(pk=pk)
+        if request.method == 'POST':
+            form = forms.EditChoreForm(request.POST, instance=chore)
+            if form.is_valid():
+                form.save()
+                return redirect('parent_profile')
+        else:
+            form = forms.EditChoreForm(instance=chore)
+        return render(request, 'edit_chore.html', {'form': form, 'chore': chore})
+    except:
+        return redirect('parent_profile')
 
 @login_required
 def toggle_availability(request, pk):
-    chore = get_object_or_404(models.Chore, pk=pk)
-    chore.available = not chore.available
-    chore.save()
+    try:
+        chore = models.Chore.objects.get(pk=pk)
+        chore.available = not chore.available
+        chore.save()
+    except:
+        pass
     return redirect('parent_profile')
 
 @login_required
 def convert_points_to_money(request, pk):
-    user = get_object_or_404(models.User, pk=pk)
-    if user.points_balance > models.Settings.objects.get(key='max_points').value / 2:
-        user.pocket_money += 100 * models.Settings.objects.get(key='point_value').value
-        user.points_balance -= 100
-        user.save()
-        models.PointLog.objects.create(user=user, points_change=-100, penalty=0, reason='Conversion to Pocket Money', chore='Payout', approver=user)
+    try:
+        user = models.User.objects.get(pk=pk)
+        if user.points_balance > models.Settings.objects.get(key='max_points').value / 2:
+            user.pocket_money += 100 * models.Settings.objects.get(key='point_value').value
+            user.points_balance -= 100
+            user.save()
+            models.PointLog.objects.create(user=user, points_change=-100, penalty=0, reason='Conversion to Pocket Money', chore='Payout', approver=user)
+    except:
+        pass
     return redirect('child_profile')
 
 @login_required
 def delete_chore(request, pk):
-    chore = get_object_or_404(models.Chore, pk=pk)
-    chore.delete()
+    try:
+        chore = models.Chore.objects.get(pk=pk)
+        chore.delete()
+    except:
+        pass
     return redirect('parent_profile')
 
 @login_required
 def claim_chore(request, pk):
-    current_time = datetime.datetime.now().time()
-    chore = get_object_or_404(models.Chore, pk=pk)
-    if chore.available:
-        if current_time <= datetime.time(models.Settings.objects.get(key='bonus_end_time').value) \
-            and current_time > datetime.time(5) \
-            and chore.earlyBonus:
-            addPoints = chore.points * ((models.Settings.objects.get(key='bonus_percent').value + 100) / 100)
-            comment = 'Early Bonus'
-        else:
-            addPoints = chore.points
-            comment = ''
-        models.ChoreClaim.objects.create(chore=chore, user=request.user, choreName=chore.name, points=addPoints, comment=comment)
-        if not chore.persistent:
-            chore.available = False
-            chore.save()
+    try:
+        current_time = datetime.datetime.now().time()
+        chore = models.Chore.objects.get(pk=pk)
+        if chore.available:
+            if current_time <= datetime.time(models.Settings.objects.get(key='bonus_end_time').value) \
+                and current_time > datetime.time(5) \
+                and chore.earlyBonus:
+                addPoints = chore.points * ((models.Settings.objects.get(key='bonus_percent').value + 100) / 100)
+                comment = 'Early Bonus'
+            else:
+                addPoints = chore.points
+                comment = ''
+            models.ChoreClaim.objects.create(chore=chore, user=request.user, choreName=chore.name, points=addPoints, comment=comment)
+            if not chore.persistent:
+                chore.available = False
+                chore.save()
+    except:
+        pass
     return redirect('child_profile')
 
 @login_required
 def return_chore(request, pk):
-    choreClaim = get_object_or_404(models.ChoreClaim, pk=pk)
-    if choreClaim.approved == 0:
-        try:
-            chore = get_object_or_404(models.Chore, pk=choreClaim.chore.pk)
+    try:
+        choreClaim = models.ChoreClaim.objects.get(pk=pk)
+        if choreClaim.approved == 0:
+            chore = models.Chore.objects.get(pk=choreClaim.chore.pk)
             chore.available = True
             chore.save()
-        except:
-            pass
-        choreClaim.delete()
+            choreClaim.delete()
+    except:
+        pass
     return redirect('child_profile')
 
 @login_required
 def approve_chore_claim(request, pk, penalty):
-    choreClaim = get_object_or_404(models.ChoreClaim, pk=pk)
-    models.PointLog.objects.create(user=choreClaim.user, points_change=(choreClaim.points - (choreClaim.points * (penalty / 100))), penalty=penalty, reason='Approved', chore=choreClaim.choreName, approver=request.user)
-    user = get_object_or_404(models.User, pk=choreClaim.user.pk)
-    user.points_balance += (choreClaim.points - (choreClaim.points * (penalty / 100)))
-    user.save()
-    choreClaim.approved = (choreClaim.points - (choreClaim.points * (penalty / 100)))
-    choreClaim.save()
+    try:
+        choreClaim = models.ChoreClaim.objects.get(pk=pk)
+        models.PointLog.objects.create(user=choreClaim.user, points_change=(choreClaim.points - (choreClaim.points * (penalty / 100))), penalty=penalty, reason='Approved', chore=choreClaim.choreName, approver=request.user)
+        user = models.User.objects.get(pk=choreClaim.user.pk)
+        user.points_balance += (choreClaim.points - (choreClaim.points * (penalty / 100)))
+        user.save()
+        choreClaim.approved = (choreClaim.points - (choreClaim.points * (penalty / 100)))
+        choreClaim.save()
+    except:
+        pass
     return redirect('parent_profile')
 
 @login_required
 def reject_chore_claim(request, pk):
-    choreClaim = get_object_or_404(models.ChoreClaim, pk=pk)
     try:
-        chore = get_object_or_404(models.Chore, pk=choreClaim.chore.pk)
+        choreClaim = models.ChoreClaim.objects.get(pk=pk)
+        chore = models.Chore.objects.get(pk=choreClaim.chore.pk)
         chore.available = True
         chore.save()
+        models.PointLog.objects.create(user=choreClaim.user, points_change=0, penalty=100, reason='Rejected', chore=choreClaim.choreName, approver=request.user)
+        choreClaim.delete()
     except:
         pass
-    models.PointLog.objects.create(user=choreClaim.user, points_change=0, penalty=100, reason='Rejected', chore=choreClaim.choreName, approver=request.user)
-    choreClaim.delete()
     return redirect('parent_profile')
 
 @login_required
@@ -255,19 +275,30 @@ def pocket_money_adjustment(request, pk):
 
 @login_required
 def daily_action(request):
-    children = models.User.objects.filter(role='Child')
-    settings = {setting.key: setting.value for setting in models.Settings.objects.all()}
+    try:
+        children = models.User.objects.filter(role='Child')
+        settings = {setting.key: setting.value for setting in models.Settings.objects.all()}
+    except:
+        return redirect('parent_profile')
 
-    apply_leaderboard_scoring(approver=request.user, children=children, settings=settings)
+    try:
+        apply_leaderboard_scoring(approver=request.user, children=children, settings=settings)
+    except:
+        pass
 
     # Process each childes penalties and bonusses
     for child in children:
-        points_penalty = incomplete_chore_penalty(approver=request.user, child=child, settings=settings)
-        apply_daily_bonus(approver=request.user, child=child, incomplete_chores_sum=points_penalty, settings=settings)
-        
+        try:
+            points_penalty = incomplete_chore_penalty(approver=request.user, child=child, settings=settings)
+            apply_daily_bonus(approver=request.user, child=child, incomplete_chores_sum=points_penalty, settings=settings)
+        except:
+            pass
 
     # Reset all chores
-    reset_daily_chores()
+    try:
+        reset_daily_chores()
+    except:
+        pass
 
     # Return to Profile
     return redirect('parent_profile')
