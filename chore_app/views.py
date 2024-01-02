@@ -5,6 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
 from django.core.paginator import Paginator
+from django.db.models import Sum
 import chore_app.forms as forms
 import chore_app.models as models
 import datetime
@@ -69,7 +70,7 @@ def parent_profile(request):
     context = {
         'available_chores': models.Chore.objects.filter(available=True),
         'unavailable_chores': models.Chore.objects.filter(available=False),
-        'claimed_chores': models.ChoreClaim.objects.all().select_related('chore'),
+        'claimed_chores': models.ChoreClaim.objects.filter(approved=0).select_related('chore'),
         'point_logs': page_obj,
         'children': models.User.objects.filter(role='Child'),
     }
@@ -87,15 +88,31 @@ def child_profile(request):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
+    chore_points = models.PointLog.objects.filter(
+        date_recorded__date=datetime.date.today()
+    ).exclude(
+        chore=''
+    ).values(
+        'user', 'user__username'
+    ).annotate(
+        total_points=Sum('points_change')
+    ).order_by('-total_points')
+
+    chores = models.Chore.objects.filter(available=True)
+    claimed_chores = models.ChoreClaim.objects.filter(user=request.user).select_related('chore')
+    filtered_chores = chores.exclude(name__in=claimed_chores.values_list('choreName', flat=True))
+
+
     context = {
         'minimum_points': models.Settings.objects.get(key='max_points').value / 2,
         'pocket_money': request.user.pocket_money / 100,
         'pocket_money_amount': models.Settings.objects.get(key='point_value').value,
         'bonus': bonus,
         'points': request.user.points_balance,
-        'chores': models.Chore.objects.filter(available=True),
+        'chores': filtered_chores,
+        'chore_points': chore_points,
         'point_logs': page_obj,  # Use the paginated page_obj instead of the original queryset
-        'claimed_chores': models.ChoreClaim.objects.filter(user=request.user).select_related('chore')
+        'claimed_chores': claimed_chores
     }
     response = render(request, 'child_profile.html', context)
     response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
@@ -152,7 +169,9 @@ def claim_chore(request, pk):
     current_time = datetime.datetime.now().time()
     chore = get_object_or_404(models.Chore, pk=pk)
     if chore.available:
-        if current_time <= datetime.time(models.Settings.objects.get(key='bonus_end_time').value) and current_time > datetime.time(5):
+        if current_time <= datetime.time(models.Settings.objects.get(key='bonus_end_time').value) \
+            and current_time > datetime.time(5) \
+            and chore.earlyBonus:
             addPoints = chore.points * ((models.Settings.objects.get(key='bonus_percent').value + 100) / 100)
             comment = 'Early Bonus'
         else:
@@ -167,13 +186,14 @@ def claim_chore(request, pk):
 @login_required
 def return_chore(request, pk):
     choreClaim = get_object_or_404(models.ChoreClaim, pk=pk)
-    try:
-        chore = get_object_or_404(models.Chore, pk=choreClaim.chore.pk)
-        chore.available = True
-        chore.save()
-    except:
-        pass
-    choreClaim.delete()
+    if choreClaim.approved == 0:
+        try:
+            chore = get_object_or_404(models.Chore, pk=choreClaim.chore.pk)
+            chore.available = True
+            chore.save()
+        except:
+            pass
+        choreClaim.delete()
     return redirect('child_profile')
 
 @login_required
@@ -183,7 +203,8 @@ def approve_chore_claim(request, pk, penalty):
     user = get_object_or_404(models.User, pk=choreClaim.user.pk)
     user.points_balance += (choreClaim.points - (choreClaim.points * (penalty / 100)))
     user.save()
-    choreClaim.delete()
+    choreClaim.approved = (choreClaim.points - (choreClaim.points * (penalty / 100)))
+    choreClaim.save()
     return redirect('parent_profile')
 
 @login_required
@@ -235,35 +256,92 @@ def pocket_money_adjustment(request, pk):
 @login_required
 def daily_action(request):
     children = models.User.objects.filter(role='Child')
+    settings = {setting.key: setting.value for setting in models.Settings.objects.all()}
+
+    apply_leaderboard_scoring(approver=request.user, children=children, settings=settings)
+
+    # Process each childes penalties and bonusses
     for child in children:
-        # Incomplete Chore Penalty
-        available_chores = models.Chore.objects.filter(available=True, persistent=False)
-        if available_chores:
-            incomplete_chores = 0
-            for chores in available_chores:
-                incomplete_chores -= chores.points / 2
-            models.PointLog.objects.create(user=child, points_change=incomplete_chores, penalty=50, reason='Incomplete Chores Penalty', chore='Daily Summary', approver=request.user)
+        points_penalty = incomplete_chore_penalty(approver=request.user, child=child, settings=settings)
+        apply_daily_bonus(approver=request.user, child=child, incomplete_chores_sum=points_penalty, settings=settings)
         
-        # Daily Bonus
-        points_balance = child.points_balance + incomplete_chores
-        old_points_balance = points_balance
-        pocket_money = child.pocket_money
-        points_balance += models.Settings.objects.get(key='daily_bonus').value
-        if points_balance > models.Settings.objects.get(key='max_points').value:
-            pocket_money += (points_balance - models.Settings.objects.get(key='max_points').value) * models.Settings.objects.get(key='point_value').value
-            points_balance = models.Settings.objects.get(key='max_points').value
-        if points_balance < models.Settings.objects.get(key='min_points').value:
-            points_balance = models.Settings.objects.get(key='min_points').value
-        models.User.objects.filter(pk=child.pk).update(points_balance=points_balance, pocket_money=pocket_money)
-        
-        models.PointLog.objects.create(user=child, points_change=points_balance-old_points_balance, penalty=0, reason='Daily Points', chore='Daily Points', approver=request.user) 
-    
+
     # Reset all chores
-    chores = models.Chore.objects.filter(daily=True)
-    for chore in chores:
-        chore.available = True
-        chore.save()
+    reset_daily_chores()
+
+    # Return to Profile
     return redirect('parent_profile')
+
+# Leaderboard Scoring
+def apply_leaderboard_scoring(approver, children, settings):
+
+    # Sum all the points each child earned from chores today
+    chore_points = models.PointLog.objects.filter(date_recorded__date=datetime.date.today()).exclude(
+        chore='').values('user', 'user__username').annotate(total_points=Sum('points_change')).order_by('-total_points')
+    
+    # Create text for the Leaderboard
+    if len (chore_points) > 0:
+        leaderboard_text = "Leaderboard Results! <br>" + \
+            "1st Place 🏆" + chore_points[0]['user__username'] + "🏆 - " + str(chore_points[0]['total_points']) + \
+                " points (+" + str(settings['leaderboard_awards']) + " <br>"
+    if len (chore_points) > 1:
+            leaderboard_text = leaderboard_text + "2nd Place " + chore_points[1]['user__username'] + " - " + str(chore_points[1]['total_points']) + \
+                " points (+" + str(settings['leaderboard_awards'] / 2) + " <br>"
+    if len (chore_points) > 2:
+            leaderboard_text = leaderboard_text + "3rd Place " + chore_points[2]['user__username'] + " - " + str(chore_points[2]['total_points']) + \
+                " points (+" + str(settings['leaderboard_awards'] / 5) + " <br>"
+
+    # Apply the medals and points
+    if len(chore_points) > 0 :
+        children.filter(user=chore_points[0]['user']).update(place_1=models.F('place_1') + 1)
+        children.filer(user=chore_points[0]['user']).update(points_balance= models.F('points_balance') + settings['leaderboard_awards'])
+        models.PointLog.objects.create(user=chore_points[0]['user'], points_change=settings['leaderboard_awards'], reason=leaderboard_text, approver=approver)
+    if len(chore_points) > 1 :
+        children.filter(user=chore_points[1]['user']).update(place_2=models.F('place_2') + 1)
+        children.filer(user=chore_points[1]['user']).update(points_balance= models.F('points_balance') + (settings['leaderboard_awards'] / 2))
+        models.PointLog.objects.create(user=chore_points[1]['user'], points_change=settings['leaderboard_awards'] / 2, reason=leaderboard_text, approver=approver)
+    if len(chore_points) > 2 :
+        children.filter(user=chore_points[2]['user']).update(place_3=models.F('place_3') + 1)
+        children.filer(user=chore_points[2]['user']).update(points_balance= models.F('points_balance') + (settings['leaderboard_awards'] / 5))
+        models.PointLog.objects.create(user=chore_points[2]['user'], points_change=settings['leaderboard_awards'] / 5, reason=leaderboard_text, approver=approver)
+    if len(chore_points) > 3 :
+        for i in range(3, len(chore_points)):
+            models.PointLog.objects.create(user=chore_points[i]['user'], points_change=0, reason=leaderboard_text, approver=approver)
+
+
+# Daily Bonus
+def apply_daily_bonus(approver, child, incomplete_chores_sum, settings):
+    points_balance = child.points_balance - incomplete_chores_sum
+    old_points_balance = points_balance
+    pocket_money = child.pocket_money
+
+    points_balance += settings['daily_bonus']
+    if points_balance > settings['max_points']:
+        pocket_money += (points_balance - settings['max_points'] * settings['point_value'])
+        points_balance = settings['max_points']
+    if points_balance < settings['min_points']:
+        points_balance = settings['min_points']
+    models.User.objects.filter(pk=child.pk).update(points_balance=points_balance, pocket_money=pocket_money)
+    
+    models.PointLog.objects.create(user=child, points_change=points_balance-old_points_balance, penalty=0, reason='Daily Points', chore='', approver=approver) 
+
+
+# Incomplete Chores Penalty
+def incomplete_chore_penalty(approver, child, settings):
+    available_chores = models.Chore.objects.filter(available=True, persistent=False)
+    if available_chores and settings['incomplete_chores_penalty'] > 0:
+        incomplete_chores_sum = -sum(chore.points / (100 / settings['incomplete_chores_penalty']) for chore in available_chores)
+        models.PointLog.objects.create(user=child, points_change=incomplete_chores_sum, penalty=settings['incomplete_chores_penalty'],
+                                   reason='Incomplete Chores Penalty',
+                                   chore='', approver=approver)
+        return incomplete_chores_sum
+
+    return 0
+
+# Reset Daily Chores to Available, and clear claimed chores
+def reset_daily_chores():
+    models.ChoreClaim.objects.filter(approved__gt=0).delete()
+    models.Chore.objects.filter(daily=True).update(available=True)
 
 @login_required
 def child_chore(request):

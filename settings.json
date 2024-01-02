@@ -5,7 +5,7 @@
         "fields": {
             "key": "daily_bonus",    
             "name": "Daily Bonus Points",
-            "value": 180
+            "value": 240
         }
     },
     {
@@ -50,7 +50,25 @@
         "fields": {
             "key": "point_value",
             "name": "Cents per Point",
-            "value": 10
+            "value": 3
+        }
+    },
+    {
+        "model": "chore_app.Settings",
+        "pk": 7,
+        "fields": {
+            "key": "leaderboard_awards",
+            "name": "Enable Leaderboard Awards, 1st Place Points",
+            "value": 50
+        }
+    }    ,
+    {
+        "model": "chore_app.Settings",
+        "pk": 7,
+        "fields": {
+            "key": "incomplete_chores_penalty",
+            "name": "Incomplete Chores Penalty Percentage",
+            "value": 50
         }
     }
 ]

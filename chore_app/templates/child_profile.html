@@ -21,9 +21,14 @@
         <div class="block">
             <h2>Points</h2>
             <span class="rainbow-text">{{ points }}</span>
-            <h4>Pocket Money: ${{ pocket_money }}</h4>
+            <h4>Game Money: ${{ pocket_money }}</h4>
+            <h4>Awards: 
+                🏆<span style="color: yellow;">{{ user.place_1 }}</span>  
+                🥈<span style="color: silver">{{ user.place_2 }}</span>  
+                🥉<span style="color: orange">{{ user.place_3 }}</span>
+            </h4>
             <div class="innerBlock"  onclick="window.location.href='{% url 'child_chore' %}'" class="open-chore-modal">
-                Create a custom chore {# For a modal #}
+                Create a custom chore
             </div>
             {% if user.points_balance > minimum_points %}
             <div class="innerBlock" onclick="if (confirm('Are you sure you want to convert your points?')) {window.location.href='{% url 'convert_points_to_money' user.pk %}' }">
@@ -33,42 +38,65 @@
         </div>
 
         <div class="block">
-            <h2> Available Chores </h2>
+            <h2> 
+                {% if chores %}
+                Available Chores
+                {% else %}
+                Leaderboard
+                {% endif %}
+             </h2>
             {% if bonus %}
             50% Bonus Points on some Chores if complete before 2PM!
             {% endif %}
 
-
-{% for chore in chores %}
-    {% if chore not in claimed_chores %}
-        <div class="innerBlock" onclick="window.location.href='{% url 'claim_chore' chore.pk %}'">
-            <div class="buttonContainer">
-                <div class="choreLeft">{{ chore.name }}</div>
-                <div class="choreRight">{{ chore.points }} {% if chore.earlyBonus and bonus %} + 50% {% endif %}</div>
-            </div>
-        </div>
-    {% endif %}
-{% empty %}
-    <div class="innerBlock" onclick="window.location.href='{% url 'claim_chore' chore.pk %}'">
-        <div class="buttonContainer">
-            <div class="choreLeft">{{ chore.name }}</div>
-            <div class="choreRight">{{ chore.points }} {% if chore.earlyBonus and bonus %} + 50% {% endif %}</div>
-        </div>
-    </div>
-{% endfor %}
+            {% if chores %}
+                {% load extra_filters %}
+                {% for chore in chores %}
+                    {% if chore not in claimed_chores %}
+                        <div class="innerBlock" onclick="window.location.href='{% url 'claim_chore' chore.pk %}'">
+                            <div class="buttonContainer">
+                                <div class="choreLeft">{{ chore.name }}</div>
+                                <div class="choreRight">{{ chore.points }} {% if chore.earlyBonus and bonus %} + {{ chore.points|halve }} {% endif %}</div>
+                            </div>
+                        </div>
+                    {% endif %}
+                {% empty %}
+                    <div class="innerBlock" onclick="window.location.href='{% url 'claim_chore' chore.pk %}'">
+                        <div class="buttonContainer">
+                            <div class="choreLeft">{{ chore.name }}</div>
+                            <div class="choreRight">{{ chore.points }} {% if chore.earlyBonus and bonus %} + {{ chore.points|halve }} {% endif %}</div>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                {% for points in chore_points|slice:":3" %}
+                    <div class="innerBlock v{{ forloop.counter0 }}">
+                        {% if forloop.counter0 == 0 %}🏆{% elif forloop.counter0 == 1 %}🥈{% elif forloop.counter0 == 2 %}🥉{% endif %} {{ points.user__username }} with {{ points.total_points }} points.       
+                    </div>
+                {% endfor %}
+            {% endif %}
 
         </div>
 
         <div class="block">
-            <h2>Completed Chores</h2>
+            <h2>Claimed Chores</h2>
 
             {% for cchore in claimed_chores %}
-            <div class="innerBlock" onclick="window.location.href='{% url 'return_chore' cchore.pk %}'">
-                <div class="buttonContainer">
-                    <div class="choreLeft">{{ cchore.choreName }}</div>
-                    <div class="choreRightClaimed">{{ cchore.points }}</div>
-                </div>
-            </div>
+                {% if cchore.approved == 0 %}
+                    <div class="innerBlock" onclick="window.location.href='{% url 'return_chore' cchore.pk %}'">
+                {% else %}
+                    <div class="innerBlock approved">
+                {% endif %}
+                        <div class="buttonContainer">
+                            <div class="choreLeft">{{ cchore.choreName }}</div>
+                            {% if cchore.approved > 0 %}
+                                <div class="choreRightClaimed">Approved for {{ cchore.approved }}</div>
+                            {% else %}
+                                <div class="choreRightClaimed">{{ cchore.points }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
             {% endfor %}
         </div>
 
@@ -93,7 +121,7 @@
                         <td>{{ point_log.chore }}</td>
                         <td>{{ point_log.points_change }}</td>
                         <td>{{ point_log.penalty }} %</td>
-                        <td>{{ point_log.reason }}</td>
+                        <td><pre>{{ point_log.reason }}</pre></td>
                         <td>{% if point_log.approver %}{{ point_log.approver.username }}{% else %}-{% endif %}</td>
                     </tr>
                     {% endfor %}
@@ -123,25 +151,33 @@
             <ul>
                 <li>Earning Points</li>
                 <ul>
-                    <li>Chores have a set value of points</li>
-                    <li>Some chores earn more if completed in the morning</li>
-                    <li>Chores are worth 2 to 4 points per minute</li>
-                    <li>You can add a chore as a custom chore if not available</li>
-                    <li>Every day some bonus points are added for free</li>
+                    <li>Bonus Points are only available in the morning, don't let it slip away!</li>
+                    <li>Missing a chore? Add it as a custom one for points!</li>
+                    <li>Every day starts with a free point boost!</li>
+                    <li>Aim to be #1 on the leaderboard for more points!</li>
                 </ul>
-                <li>Losing Points</li>
+                <li>Leaderboard Points</li>
                 <ul>
-                    <li>Chores not completed have half their value removed from your points</li>
+                    <li>Points are awarded based on Approved Chores</li>
+                    <li>Your trophy is based on your rank, and is permenantly recorded</li>
+                    <li>Collect those Trophies!</li>
+                    <li>At the end of the day, you get your award for your work</li>
+                    <ul>
+                        <li>First Place: 50 Points</li>
+                        <li>Second Place: 25 Points</li>
+                        <li>Third Place: 10 Points</li>
+                    </ul>
                 </ul>
                 <li>Spending Points</li>
                 <ul>
                     <li>Every minute of time spent on screens, such as iPad, TV, Computer and XBox, cost 1 point</li>
-                    <li>If over 300 points are available, you can convert 100 points to pocket money.</li>
+                    <li>If over 300 points are available, you can convert 100 points to game money.</li>
+                    <li>Game Money is can be used for IAP.  Money for IAP can not be gained any other way.</li>
                 </ul>
                 <li>Penalties</li>
                 <ul>
-                    <li>All chores claimed must be approved, and may incur penalties</li>
-                    <li>Penalties may be for incomplete job, or finished a partially completed chore</li>
+                    <li>All chores claimed must be approved, and may incur penalties for incomplete work</li>
+                    <li>Be thorough! Unfinished chores get a 50% point penalty.</li>
                 </ul>
                 <li>Adjustments, Refunds of points</li>
                 <ul>

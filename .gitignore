@@ -1,3 +1,5 @@
+admin
 db.sqlite3
+INSTALL_LOCK
 chore_app/migrations
 chore_app/__pycache__

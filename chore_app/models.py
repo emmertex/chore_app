@@ -5,6 +5,9 @@ class User(AbstractUser):
     role = models.CharField(max_length=10, choices=(('Parent', 'Parent'), ('Child', 'Child')))
     points_balance = models.IntegerField(default=0)
     pocket_money = models.IntegerField(default=0)
+    place_1 = models.IntegerField(default=0)
+    place_2 = models.IntegerField(default=0)
+    place_3 = models.IntegerField(default=0)
 
 class Chore(models.Model):
     name = models.CharField(max_length=255)
@@ -18,6 +21,7 @@ class ChoreClaim(models.Model):
     chore = models.ForeignKey(Chore, on_delete=models.CASCADE, blank=True, null=True, default=None)
     choreName = models.CharField(max_length=255, default="")
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user_choreclaim')
+    approved = models.IntegerField(default=0)
     points = models.IntegerField(default=0)
     comment = models.CharField(max_length=255, default="")
 
