@@ -5,6 +5,13 @@ So, what incentive is there?  Screen time!
 Perform chores to earn points,  Points are used for screen time.  Simple.  
 But we have Bonuses, Trophies, Penalties, and crazy parents too... 
 
+Childrens Dashboard  
+![Childrens Dashboard](documents/child.gif)  
+
+Parents Dashboard  
+![Parents Dashboard](documents/parent.png)  
+
+
 ### State of the App 
 It was built for me, and my family.   
 I have never used django, I learnt as I went.  I also hate CSS and HTML.  
