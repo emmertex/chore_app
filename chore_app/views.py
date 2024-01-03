@@ -1,8 +1,7 @@
 from django.shortcuts import render, redirect
+from django.contrib.auth import authenticate, login, logout, get_user_model
 from django.contrib.auth.forms import UserCreationForm
-from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth import get_user_model
 from django.core.paginator import Paginator
 from django.db.models import Sum, F
 import chore_app.forms as forms
@@ -322,10 +321,10 @@ def apply_leaderboard_scoring(approver, children, settings):
             "1st Place 🏆" + chore_points[0]['user__username'] + "🏆 - " + str(chore_points[0]['total_points']) + \
                 " points (+" + str(settings['leaderboard_awards']) + ") \r\n"
     if len (chore_points) > 1:
-            leaderboard_text = leaderboard_text + "2nd Place " + chore_points[1]['user__username'] + " - " + str(chore_points[1]['total_points']) + \
+            leaderboard_text += "2nd Place " + chore_points[1]['user__username'] + " - " + str(chore_points[1]['total_points']) + \
                 " points (+" + str(int(settings['leaderboard_awards'] / 2)) + ") \r\n"
     if len (chore_points) > 2:
-            leaderboard_text = leaderboard_text + "3rd Place " + chore_points[2]['user__username'] + " - " + str(chore_points[2]['total_points']) + \
+            leaderboard_text += "3rd Place " + chore_points[2]['user__username'] + " - " + str(chore_points[2]['total_points']) + \
                 " points (+" + str(int(settings['leaderboard_awards'] / 5)) + ") \r\n"
 
     # Apply the medals and points

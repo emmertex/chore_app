@@ -27,5 +27,12 @@ python3 manage.py makemigrations
 python3 manage.py makemigrations chore_app
 python3 manage.py migrate
 
-[ ! -f "$LOCK_FILE" ] && python3 manage.py loaddata settings.json
-[ ! -f "$LOCK_FILE" ] && touch "$LOCK_FILE"
+lock_file_exists=false
+if [ -f "$LOCK_FILE" ]; then
+    lock_file_exists=true
+fi
+
+if ! $lock_file_exists; then
+    python3 manage.py loaddata settings.json
+    touch "$LOCK_FILE"
+fi

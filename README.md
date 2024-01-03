@@ -24,17 +24,18 @@ Looking into the idea of using scrapy to automatically grab screen time from Mic
 ## Installation and Execution Instructions
 
 ### Installation
-To prepare your POSIX-compatible operating system (Linux, MacOS, WSL2) for running the application, execute the `install.sh` script. This script automates the following tasks:
+To prepare your system (Linux, MacOS, WSL2) for running the application, execute the `install.sh` script, or for Windows without WSL, the `install.bat`. This script automates the following tasks:
 1. Checks for Python 3 and installs it if missing, using the appropriate package manager for your system.
 2. Installs Django using Python's pip if it's not already installed.
 3. Sets up the Django migrations and applies them to initialize the database.
 4. Loads initial settings from `settings.json` into the database, ensuring this is done only once.
 
 ### Running the Application
-Use the `launch.sh` script to start the application. This script handles:
+MacOS, Linux, and WSL: Use the `launch.sh` script to start the application. This script handles:
 1. Verifying if the `screen` utility is installed to run the application in a detached session.
 2. If `screen` is available, the application starts in a new detached screen session named "chore_app". Instructions to attach to this session are provided.
 3. If `screen` is not available, the application will run in the foreground.
+Windows without WSL: Use the `launch.bat` script to start the application.  Same functionality as above, but no screen.
 
 
 ## Accessing the App
