@@ -289,8 +289,8 @@ def daily_action(request):
     # Process each child's incomplete chores penalties and bonusses
     for child in children:
         try:
-            apply_daily_bonus(approver=request.user, child=child, incomplete_chores_sum=points_penalty, settings=settings)
             points_penalty = incomplete_chore_penalty(approver=request.user, child=child, settings=settings)
+            apply_daily_bonus(approver=request.user, child=child, incomplete_chores_sum=points_penalty, settings=settings)
         except:
             pass
 
