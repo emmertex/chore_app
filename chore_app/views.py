@@ -286,18 +286,18 @@ def daily_action(request):
     except:
         return redirect('parent_profile')
 
+    # Process each child's incomplete chores penalties and bonusses
+    for child in children:
+        try:
+            apply_daily_bonus(approver=request.user, child=child, incomplete_chores_sum=points_penalty, settings=settings)
+            points_penalty = incomplete_chore_penalty(approver=request.user, child=child, settings=settings)
+        except:
+            pass
+
     try:
         apply_leaderboard_scoring(approver=request.user, children=children, settings=settings)
     except:
         pass
-
-    # Process each child's incomplete chores penalties and bonusses
-    for child in children:
-        try:
-            points_penalty = incomplete_chore_penalty(approver=request.user, child=child, settings=settings)
-            apply_daily_bonus(approver=request.user, child=child, incomplete_chores_sum=points_penalty, settings=settings)
-        except:
-            pass
 
     # Reset all chores
     try:
@@ -351,12 +351,13 @@ def apply_daily_bonus(approver, child, incomplete_chores_sum, settings):
     old_points_balance = points_balance
     pocket_money = child.pocket_money
 
+    if points_balance < settings['min_points']:
+        points_balance = settings['min_points']
     points_balance += settings['daily_bonus']
     if points_balance > settings['max_points']:
         pocket_money += (points_balance - settings['max_points'] * settings['point_value'])
         points_balance = settings['max_points']
-    if points_balance < settings['min_points']:
-        points_balance = settings['min_points']
+
     models.User.objects.filter(pk=child.pk).update(points_balance=points_balance, pocket_money=pocket_money)
     
     models.PointLog.objects.create(user=child, points_change=points_balance-old_points_balance, penalty=0, reason='Daily Points', chore='', approver=approver) 
