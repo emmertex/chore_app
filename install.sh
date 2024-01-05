@@ -20,7 +20,7 @@ fi
 
 if ! command -v django-admin &> /dev/null; then
     echo "Django is not installed. Installing..."
-    python3 -m pip install django
+    python3 -m pip install django django-allauth
 fi
 
 python3 manage.py makemigrations

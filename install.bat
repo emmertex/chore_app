@@ -14,7 +14,7 @@ if %errorlevel% neq 0 (
 where django-admin >nul 2>nul
 if %errorlevel% neq 0 (
     echo Django is not installed. Installing...
-    python -m pip install django
+    python -m pip install django django-allauth 
 )
 
 python manage.py makemigrations
