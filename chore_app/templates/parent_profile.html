@@ -11,6 +11,7 @@
 
 <body>
 
+    {% load extra_filters %}
     <div class="container">
 
     <div class="bigblock">
@@ -75,7 +76,17 @@
             <tbody>
                 {% for chore in available_chores %}
                 <tr>
-                    <td>{{ chore.name }}</td>
+                    <td>{{ chore.name }}                        
+                        <div style="font-size: smaller; color: darkcyan;">
+                            {% if chore.availableTime == -24 %}
+                            {% elif chore.availableTime < 0 %}
+                                Available Before {{ chore.availableTime|abs_filter }}:00
+                            {% elif chore.availableTime > 0 %}
+                                Available After {{ chore.availableTime }}:00
+                            {% endif %}
+                            {{ chore_claim.comment }}
+                        </div>
+                    </td>
                     <td>{{ chore.points }} {% if chore.earlyBonus %} ++ {% endif %}</td>
                     <td class="table-min-width">
                         <div class="innerBlock chore-modal" style="display: inline-block;" id="chore-available-modal-{{ chore.pk }}">Action</div>
