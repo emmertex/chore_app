@@ -3,7 +3,7 @@ from django.contrib.auth import authenticate, login, logout, get_user_model
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
-from django.db.models import Sum, F
+from django.db.models import Sum, F, Q
 import chore_app.forms as forms
 import chore_app.models as models
 import datetime
@@ -103,9 +103,11 @@ def child_profile(request):
     claimed_chores = models.ChoreClaim.objects.filter(user=request.user).select_related('chore')
     filtered_chores = chores.exclude(
         name__in=claimed_chores.values_list('choreName', flat=True)
-    ).exclude(
-        availableTime__gte=(current_time.hour * -1),
-        availableTime__lt=current_time.hour,
+    )
+    filtered_chores = chores.exclude(
+        (Q(availableTime__gte=0, availableTime__gt=current_time.hour) |
+        Q(availableTime__lt=0, availableTime__gt=-current_time.hour)) &
+        ~Q(availableTime__exact=0)
     )
     
 

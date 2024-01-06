@@ -26,7 +26,7 @@ class EditChoreForm(forms.ModelForm):
             'daily': 'Automatically Available Daily',
             'persistent': 'Available for All Children',
             'earlyBonus': 'Early Bonus Points if done early',
-            'availableTime': 'Time in which chore is available (+ for after, - for before)' 
+            'availableTime': 'Time in which chore is available (+ for after, - for before, 0 for always available)' 
         }
 
 class PointAdjustmentForm(forms.ModelForm):

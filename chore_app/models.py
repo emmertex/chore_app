@@ -16,7 +16,7 @@ class Chore(models.Model):
     daily = models.BooleanField(default=False)
     persistent = models.BooleanField(default=False)
     earlyBonus = models.BooleanField(default=False)
-    availableTime = models.IntegerField(default=-24)
+    availableTime = models.IntegerField(default=0)
 
 class ChoreClaim(models.Model):
     chore = models.ForeignKey(Chore, on_delete=models.CASCADE, blank=True, null=True, default=None)
