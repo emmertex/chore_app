@@ -106,7 +106,8 @@ code {
 .buttonContainer {
     display: flex;
     justify-content: space-between;
-    height: 24px;
+    /* height: 24px; */
+    word-wrap: normal;
 }
 .choreLeft {
     color: white;
@@ -128,6 +129,12 @@ code {
     animation-duration: 4s;
     animation-iteration-count: infinite;
     animation-timing-function: linear;
+    flex-wrap: nowrap;
+    word-wrap: none;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    margin-left: 15px;
 }
 
 .choreRightClaimed {
