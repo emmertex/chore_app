@@ -11,11 +11,12 @@ class User(AbstractUser):
 
 class Chore(models.Model):
     name = models.CharField(max_length=255)
-    points = models.IntegerField()
+    points = models.IntegerField(default=0)
     available = models.BooleanField(default=True)
     daily = models.BooleanField(default=False)
     persistent = models.BooleanField(default=False)
     earlyBonus = models.BooleanField(default=False)
+    availableTime = models.IntegerField(default=-24)
 
 class ChoreClaim(models.Model):
     chore = models.ForeignKey(Chore, on_delete=models.CASCADE, blank=True, null=True, default=None)
@@ -27,7 +28,7 @@ class ChoreClaim(models.Model):
 
 class PointLog(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    points_change = models.IntegerField()
+    points_change = models.IntegerField(default=0)
     reason = models.CharField(max_length=255)
     chore = models.CharField(max_length=255)
     penalty = models.IntegerField(default=0)
@@ -37,4 +38,4 @@ class PointLog(models.Model):
 class Settings(models.Model):
     key = models.CharField(max_length=255)
     name = models.CharField(max_length=255, default="")
-    value = models.IntegerField()
+    value = models.IntegerField(default=0)

@@ -61,7 +61,7 @@
             "name": "Enable Leaderboard Awards, 1st Place Points",
             "value": 50
         }
-    }    ,
+    },
     {
         "model": "chore_app.Settings",
         "pk": 8,

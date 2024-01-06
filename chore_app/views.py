@@ -101,7 +101,13 @@ def child_profile(request):
 
     chores = models.Chore.objects.filter(available=True)
     claimed_chores = models.ChoreClaim.objects.filter(user=request.user).select_related('chore')
-    filtered_chores = chores.exclude(name__in=claimed_chores.values_list('choreName', flat=True))
+    filtered_chores = chores.exclude(
+        name__in=claimed_chores.values_list('choreName', flat=True)
+    ).exclude(
+        availableTime__gte=(current_time.hour * -1),
+        availableTime__lt=current_time.hour,
+    )
+    
 
 
     context = {
