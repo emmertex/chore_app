@@ -246,14 +246,17 @@ code {
 
 .bigblock {
   flex: 1 0 90%;
-  min-width: 600px;
+  max-width: 100%;
   margin: 10px;
   background-color: rgba(0, 0, 0, 0.2);
   border-radius: 15px;
   padding: 10px;
   padding-left: 15px;
   padding-right: 15px;
+  overflow: auto;
 }
+
+
 
 .chore-options {
     z-index: 100;
