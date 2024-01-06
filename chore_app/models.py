@@ -11,6 +11,7 @@ class User(AbstractUser):
 
 class Chore(models.Model):
     name = models.CharField(max_length=255)
+    comment = models.CharField(max_length=255, default="")
     points = models.IntegerField(default=0)
     available = models.BooleanField(default=True)
     daily = models.BooleanField(default=False)

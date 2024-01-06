@@ -76,7 +76,10 @@
             <tbody>
                 {% for chore in available_chores %}
                 <tr>
-                    <td>{{ chore.name }}                        
+                    <td>{{ chore.name }}    
+                        <div style="font-size: smaller;">
+                            {{ chore.comment }}
+                          </div>                    
                         <div style="font-size: smaller; color: darkcyan;">
                             {% if chore.availableTime == -24 %}
                             {% elif chore.availableTime < 0 %}
@@ -120,7 +123,9 @@
             <tbody>
                 {% for chore in unavailable_chores %}
                 <tr>
-                    <td>{{ chore.name }}
+                    <td>{{ chore.name }} <div style="font-size: smaller;">
+                        {{ chore.comment }}
+                      </div>
                         <div style="font-size: smaller; color: darkcyan;">
                             {% if chore.availableTime == -24 %}
                             {% elif chore.availableTime < 0 %}

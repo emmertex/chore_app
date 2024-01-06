@@ -55,7 +55,9 @@
                     {% if chore not in claimed_chores %}
                         <div class="innerBlock" onclick="window.location.href='{% url 'claim_chore' chore.pk %}'">
                             <div class="buttonContainer">
-                                <div class="choreLeft">{{ chore.name }}</div>
+                                <div class="choreLeft">{{ chore.name }} <div style="font-size: smaller;">
+                                    {{ chore.comment }}
+                                  </div></div>
                                 <div class="choreRight">{{ chore.points }} {% if chore.earlyBonus and bonus %} + {{ chore.points|halve }} {% endif %}</div>
                             </div>
                         </div>
@@ -63,7 +65,9 @@
                 {% empty %}
                     <div class="innerBlock" onclick="window.location.href='{% url 'claim_chore' chore.pk %}'">
                         <div class="buttonContainer">
-                            <div class="choreLeft">{{ chore.name }}</div>
+                            <div class="choreLeft">{{ chore.name }} <div style="font-size: smaller;">
+                                {{ chore.comment }}
+                              </div></div>
                             <div class="choreRight">{{ chore.points }} {% if chore.earlyBonus and bonus %} + {{ chore.points|halve }} {% endif %}</div>
                         </div>
                     </div>
@@ -88,7 +92,9 @@
                     <div class="innerBlock approved">
                 {% endif %}
                         <div class="buttonContainer">
-                            <div class="choreLeft">{{ cchore.choreName }}</div>
+                            <div class="choreLeft">{{ cchore.choreName }} <div style="font-size: smaller;">
+                                {{ cchore.comment }}
+                              </div></div>
                             {% if cchore.approved > 0 %}
                                 <div class="choreRightClaimed">Approved for {{ cchore.approved }}</div>
                             {% else %}

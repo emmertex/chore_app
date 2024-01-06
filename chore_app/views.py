@@ -198,7 +198,7 @@ def claim_chore(request, pk):
                 comment = 'Early Bonus'
             else:
                 addPoints = chore.points
-                comment = ''
+                comment = chore.comment
             models.ChoreClaim.objects.create(chore=chore, user=request.user, choreName=chore.name, points=addPoints, comment=comment)
             if not chore.persistent:
                 chore.available = False

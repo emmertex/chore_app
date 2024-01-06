@@ -4,9 +4,10 @@ from django import forms
 class ChoreForm(forms.ModelForm):
     class Meta:
         model = Chore
-        fields = ['name', 'points', 'available', 'daily', 'persistent', 'earlyBonus', 'availableTime']
+        fields = ['name', 'comment', 'points', 'available', 'daily', 'persistent', 'earlyBonus', 'availableTime']
         labels = {
             'name': 'Chore Name',
+            'comment': 'Details of Chore',
             'points': 'Points',
             'available': 'Is Available',
             'daily': 'Automatically Available Daily',
@@ -18,9 +19,10 @@ class ChoreForm(forms.ModelForm):
 class EditChoreForm(forms.ModelForm):
     class Meta:
         model = Chore
-        fields = ['name', 'points', 'available', 'daily', 'persistent', 'earlyBonus', 'availableTime']
+        fields = ['name', 'comment', 'points', 'available', 'daily', 'persistent', 'earlyBonus', 'availableTime']
         labels = {
             'name': 'Chore Name',
+            'comment': 'Details of Chore',
             'points': 'Points',
             'available': 'Is Available',
             'daily': 'Automatically Available Daily',
