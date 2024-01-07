@@ -27,6 +27,14 @@
                 🥈<span style="color: silver">{{ user.place_2 }}</span>  
                 🥉<span style="color: orange">{{ user.place_3 }}</span>
             </h4>
+            <div class="innerBlock">
+                <h3>Todays Leaderboard</h3>
+                {% for points in chore_points|slice:":3" %}
+                    <div>
+                        {% if forloop.counter0 == 0 %}🏆{% elif forloop.counter0 == 1 %}🥈{% elif forloop.counter0 == 2 %}🥉{% endif %} {{ points.user__username }} with {{ points.total_points }} points.
+                    </div>
+                {% endfor %}
+            </div>
             <div class="innerBlock"  onclick="window.location.href='{% url 'child_chore' %}'" class="open-chore-modal">
                 Create a custom chore
             </div>
@@ -72,13 +80,6 @@
                         </div>
                     </div>
                 {% endfor %}
-                <div class="innerBlock">
-                    {% for points in chore_points|slice:":3" %}
-                        <div>
-                            {% if forloop.counter0 == 0 %}🏆{% elif forloop.counter0 == 1 %}🥈{% elif forloop.counter0 == 2 %}🥉{% endif %} {{ points.user__username }} with {{ points.total_points }} points.
-                        </div>
-                    {% endfor %}
-                </div>
             {% else %}
                 {% for points in chore_points|slice:":3" %}
                     <div class="innerBlock v{{ forloop.counter0 }}">
@@ -99,7 +100,7 @@
                     <div class="innerBlock approved">
                 {% endif %}
                         <div class="buttonContainer">
-                            <div class="choreLeft">{{ cchore.choreName }} <div style="font-size: smaller;">
+                            <div class="choreLeft">{{ cchore.choreName }} <div class="small-text description">
                                 {{ cchore.comment }}
                               </div></div>
                             {% if cchore.approved > 0 %}
