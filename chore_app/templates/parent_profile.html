@@ -41,17 +41,17 @@
                     <td>{{ chore_claim.points }}</td>
                     <td>{{ chore_claim.user }}</td>
                     <td class="table-min-width">
-                        <div class="chore-modal" id="chore-claim-modal-{{ chore.pk }}">
+                        <div class="chore-modal" id="chore-claim-modal-{{ chore_claim.pk }}">
                             <div class="innerBlock" style="float: left;">Action</div>
                         </div>
 
-                            <div class="chore-options" id="chore-claim-options-{{ chore.pk }}" style="display: none;">
+                            <div class="chore-options" id="chore-claim-options-{{ chore_claim.pk }}" style="display: none;">
                                 <div class="block opaque">
                                     <div class="innerBlock green" onclick="window.location.href='{% url 'approve_chore_claim' chore_claim.pk 0 %}'">Approve</div>
                                     <div class="innerBlock" onclick="window.location.href='{% url 'approve_chore_claim' chore_claim.pk 25 %}'">Approve with 75% Points</div>
                                     <div class="innerBlock" onclick="window.location.href='{% url 'approve_chore_claim' chore_claim.pk 50 %}'">Approve with 50% Points</div>
                                     <div class="innerBlock red" onclick="window.location.href='{% url 'reject_chore_claim' chore_claim.pk %}'">Reject</div>
-                                    <div class="innerBlock" onclick="dismissModal()" id="chore-claim-modal-{{ chore.pk }}">Cancel</div>
+                                    <div class="innerBlock" onclick="dismissModal()" id="chore-claim-modal-{{ chore_claim.pk }}">Cancel</div>
                             </div>
                         </div>
                     </td>
