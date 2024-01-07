@@ -24,169 +24,135 @@
         {% if claimed_chores %}
         <div class="block">
             <h3>Claimed Chores Waiting for Approval</h3>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Chore</th>
-                        <th>Points</th>
-                        <th>Claimed</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
                     {% for chore_claim in claimed_chores %}
-                    <tr>
-                        <td>{{ chore_claim.choreName }} <div class="small-text description">
-                                {{ chore_claim.comment }}
-                            </div>
-                        </td>
-                        <td>{{ chore_claim.points }}</td>
-                        <td>{{ chore_claim.user }}</td>
-                        <td class="table-min-width">
-                            <div class="chore-modal" id="chore-claim-modal-{{ chore_claim.pk }}">
-                                <div class="innerBlock" style="float: left;">Action</div>
-                            </div>
-
-                            <div class="chore-options" id="chore-claim-options-{{ chore_claim.pk }}"
-                                style="display: none;">
-                                <div class="block opaque">
-                                    <div class="innerBlock green"
-                                        onclick="window.location.href='{% url 'approve_chore_claim' chore_claim.pk 0 %}'">
-                                        Approve</div>
-                                    <div class="innerBlock"
-                                        onclick="window.location.href='{% url 'approve_chore_claim' chore_claim.pk 25 %}'">
-                                        Approve with 75% Points</div>
-                                    <div class="innerBlock"
-                                        onclick="window.location.href='{% url 'approve_chore_claim' chore_claim.pk 50 %}'">
-                                        Approve with 50% Points</div>
-                                    <div class="innerBlock red"
-                                        onclick="window.location.href='{% url 'reject_chore_claim' chore_claim.pk %}'">
-                                        Reject</div>
-                                    <div class="innerBlock" onclick="dismissModal()"
-                                        id="chore-claim-modal-{{ chore_claim.pk }}">Cancel</div>
+                    <div style="display: flex; flex-direction: row; flex-wrap: nowrap; width: 100%;">
+                        <div class="innerBlock" onclick="window.location.href='{% url 'approve_chore_claim' chore_claim.pk 0 %}'" style="width: 100%;">
+                            <div class="buttonContainer">
+                                <div class="choreLeft">{{ chore_claim.user }}</div>
+                                <div>
+                                    {{ chore_claim.choreName }} 
+                                    <div class="small-text description">
+                                        {{ chore_claim.comment }}
+                                    </div>
                                 </div>
+                            
+                                <div class="choreRight">{{ chore_claim.points }}</div>
                             </div>
-                        </td>
-                    </tr>
+                        </div>
+                    
+                        <div class="chore-modal" id="chore-claim-modal-{{ chore_claim.pk }}">
+                            <div class="innerBlock" style="float: left;">Other</div>
+                        </div>
+
+                        <div class="chore-options" id="chore-claim-options-{{ chore_claim.pk }}" style="display: none;">
+                            <div class="block opaque">
+                                <div class="innerBlock green"
+                                    onclick="window.location.href='{% url 'approve_chore_claim' chore_claim.pk 0 %}'">
+                                    Approve</div>
+                                <div class="innerBlock"
+                                    onclick="window.location.href='{% url 'approve_chore_claim' chore_claim.pk 25 %}'">
+                                    Approve with 75% Points</div>
+                                <div class="innerBlock"
+                                    onclick="window.location.href='{% url 'approve_chore_claim' chore_claim.pk 50 %}'">
+                                    Approve with 50% Points</div>
+                                <div class="innerBlock red"
+                                    onclick="window.location.href='{% url 'reject_chore_claim' chore_claim.pk %}'">
+                                    Reject</div>
+                                <div class="innerBlock" onclick="dismissModal()"
+                                    id="chore-claim-modal-{{ chore_claim.pk }}">Cancel</div>
+                            </div>
+                        </div>
+                    </div>
                     {% endfor %}
-                </tbody>
-            </table>
+
         </div>
         {% endif %}
 
         {% if available_chores %}
         <div class="block">
-            <h3 class="toggle" data-target="#availableContent">Available Chores</h3>
-            <div id="availableContent">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Chore</th>
-                        <th>Points</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for chore in available_chores %}
-                    <tr>
-                        <td>{{ chore.name }}
+            <h3>New Available Chores</h3>
+            
+            {% for chore in available_chores %}
+            <div style="display: flex; flex-direction: row; flex-wrap: nowrap;">
+                <div class="innerBlock" onclick="window.location.href='{% url 'toggle_availability' chore.pk %}'" style="width: 100%;">
+                    <div class="buttonContainer">
+                        <div class="choreLeft">{{ chore.name }}
                             <div class="small-text description">
                                 {{ chore.comment }}
                             </div>
                             <div class="small-text time">
                                 {% if chore.availableTime < 0 %} Available Before {{ chore.availableTime|abs_filter }}:00 {% elif chore.availableTime > 0 %}
                                     Available After {{ chore.availableTime }}:00
-                                    {% endif %}
+                                {% endif %}
                             </div>
-                        </td>
-                        <td>{{ chore.points }} {% if chore.earlyBonus %} ++ {% endif %}</td>
-                        <td class="table-min-width">
-                            <div class="chore-modal">
-                                <div class="innerBlock" id="chore-available-modal-{{ chore.pk }}">Action</div>
-                                <div class="innerBlock"
-                                    onclick="window.location.href='{% url 'toggle_availability' chore.pk %}';">Disable
-                                </div>
+                        </div>
+                        <div class="choreRight">{{ chore.points }} {% if chore.earlyBonus %} ++ {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="innerBlock edit" id="chore-available-modal-{{ chore.pk }}">✏️
+                    <div class="chore-options" id="chore-available-options-{{ chore.pk }}" style="display: none;">
+                        <div class="block opaque">
+                            <div class="innerBlock" onclick="window.location.href='{% url 'edit_chore' chore.pk %}'">
+                                Edit
                             </div>
-                            <div class="chore-options" id="chore-available-options-{{ chore.pk }}"
-                                style="display: none;">
-                                <div class="block opaque">
-                                    <div class="innerBlock"
-                                        onclick="window.location.href='{% url 'edit_chore' chore.pk %}'">Edit</div>
-                                    <div class="innerBlock"
-                                        onclick="window.location.href='{% url 'toggle_availability' chore.pk %}'">Make
-                                        Unavailable</div>
-                                    <div class="innerBlock red"
-                                        onclick="if(confirm('Are you sure you want to delete this chore?')){ window.location.href='{% url 'delete_chore' chore.pk %}'; }">
-                                        Delete Chore</div>
-                                    <div class="innerBlock" onclick="dismissModal()"
-                                        id="chore-available-modal-{{ chore.pk }}">Cancel</div>
-                                </div>
+                            <div class="innerBlock"
+                                onclick="window.location.href='{% url 'toggle_availability' chore.pk %}'">Make
+                                Unavailable
                             </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                            <div class="innerBlock red"
+                                onclick="if(confirm('Are you sure you want to delete this chore?')){ window.location.href='{% url 'delete_chore' chore.pk %}'; }">
+                                Delete Chore
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
+            {% endfor %}
         </div>
         {% endif %}
 
         {% if unavailable_chores %}
         <div class="block">
-            <h3 class="toggle" data-target="#unavailableContent">Unavailable Chores</h3>
-            <div id="unavailableContent">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Chore</th>
-                        <th>Points</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for chore in unavailable_chores %}
-                    <tr>
-                        <td>{{ chore.name }} <div class="small-text description">
+            <h3>New Unavailable Chores</h3>
+            
+            {% for chore in unavailable_chores %}
+            <div style="display: flex; flex-direction: row; flex-wrap: nowrap;">
+                <div class="innerBlock" onclick="window.location.href='{% url 'toggle_availability' chore.pk %}'" style="width: 100%;">
+                    <div class="buttonContainer">
+                        <div class="choreLeft">{{ chore.name }}
+                            <div class="small-text description">
                                 {{ chore.comment }}
                             </div>
                             <div class="small-text time">
-                                {% if chore.availableTime < 0 %}
-                                Available Before {{ chore.availableTime|abs_filter }}:00
-                            {% elif chore.availableTime > 0 %}
+                                {% if chore.availableTime < 0 %} Available Before {{ chore.availableTime|abs_filter }}:00 {% elif chore.availableTime > 0 %}
                                     Available After {{ chore.availableTime }}:00
-                                    {% endif %}
+                                {% endif %}
                             </div>
-                        </td>
-                        <td>{{ chore.points }} {% if chore.earlyBonus %} ++ {% endif %}</td>
-                        <td class="table-min-width">
-                            <div class="chore-modal">
-                                <div class="innerBlock" id="chore-unavailable-modal-{{ chore.pk }}">Action</div>
-                                <div class="innerBlock"
-                                    onclick="window.location.href='{% url 'toggle_availability' chore.pk %}';">Enable
-                                </div>
-                                <div style="clear: both;"></div>
+                        </div>
+                        <div class="choreRight">{{ chore.points }} {% if chore.earlyBonus %} ++ {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="innerBlock edit" id="chore-unavailable-modal-{{ chore.pk }}">✏️
+                    <div class="chore-options" id="chore-unavailable-options-{{ chore.pk }}" style="display: none;">
+                        <div class="block opaque">
+                            <div class="innerBlock" onclick="window.location.href='{% url 'edit_chore' chore.pk %}'">
+                                Edit
                             </div>
-                            <div class="chore-options" id="chore-unavailable-options-{{ chore.pk }}"
-                                style="display: none;">
-                                <div class="block opaque">
-                                    <div class="innerBlock"
-                                        onclick="window.location.href='{% url 'edit_chore' chore.pk %}'">Edit</div>
-                                    <div class="innerBlock"
-                                        onclick="window.location.href='{% url 'toggle_availability' chore.pk %}'">Make
-                                        Available</div>
-                                    <div class="innerBlock red"
-                                        onclick="if(confirm('Are you sure you want to delete this chore?')){ window.location.href='{% url 'delete_chore' chore.pk %}'; }">
-                                        Delete Chore</div>
-                                    <div class="innerBlock" onclick="dismissModal()"
-                                        id="chore-unavailable-modal-{{ chore.pk }}">Cancel</div>
-                                </div>
+                            <div class="innerBlock"
+                                onclick="window.location.href='{% url 'toggle_availability' chore.pk %}'">
+                                Make Available
                             </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                            <div class="innerBlock red"
+                                onclick="if(confirm('Are you sure you want to delete this chore?')){ window.location.href='{% url 'delete_chore' chore.pk %}'; }">
+                                Delete Chore
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
+            {% endfor %}
         </div>
         {% endif %}
 
@@ -205,6 +171,7 @@
             </div>
         </div>
 
+
         <div class="block">
             <h3> Childrens Points </h3>
             <table>
@@ -214,6 +181,7 @@
                         <th>Points</th>
                         <th>Money</th>
                         <th>Trophies</th>
+                        <th>Leaderboard</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -225,21 +193,23 @@
                         <td>{{ child.pocket_money }}</td>
                         <td>🏆{{ child.place_1 }} 🥈{{ child.place_2 }} 🥉{{ child.place_3 }}</td>
                         <td>
-                            <a href="{% url 'point_adjustment' child.pk %}">Adjust Points</a><br>
-                            <a href="{% url 'pocket_money_adjustment' child.pk %}">Adjust Pocket Money</a>
+                            {% for chore in chore_points %}
+                                {% if chore.user__username == child.username %}
+                                {% if forloop.counter0 == 0 %}🏆{% elif forloop.counter0 == 1 %}🥈{% elif forloop.counter0 == 2 %}🥉{% endif %}
+                                    {{ chore.total_points }}
+                                {% endif %}
+                            {% endfor %}
+                        </td>
+                        <td>
+                            <div class="innerBlock" onclick="window.location.href='{% url 'point_adjustment' child.pk %}'">Points</div>
+                            <div class="innerBlock" onclick="window.location.href='{% url 'pocket_money_adjustment' child.pk %}'">Money</div>
                         </td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
-            <h3>Todays Leaderboard</h3>
-            {% for points in chore_points|slice:":3" %}
-            <div>
-                {% if forloop.counter0 == 0 %}🏆{% elif forloop.counter0 == 1 %}🥈{% elif forloop.counter0 == 2 %}🥉{% endif %} {{ points.user__username }} with {{ points.total_points }} points.
-            </div>
-            {% endfor %}
         </div>
-
+        
         <div class="bigblock">
                 <h3 class="toggle" data-target="#logContent">Point Log</h3>
                 <div id="logContent" style="display: none;">

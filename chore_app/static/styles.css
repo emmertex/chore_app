@@ -232,6 +232,16 @@ code {
     background-color: rgba(0, 255, 0, 0.2);
 }
 
+.innerBlock.edit {
+    font-size: 20px;
+    flex-wrap: nowrap;
+    word-wrap: none;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    margin-left: 15px;
+}
+
 .innerBlock.v0 {
     overflow: hidden;
     animation: flashLine 2s infinite;
