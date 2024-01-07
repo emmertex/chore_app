@@ -91,8 +91,10 @@
                     </td>
                     <td>{{ chore.points }} {% if chore.earlyBonus %} ++ {% endif %}</td>
                     <td class="table-min-width">
-                        <div class="innerBlock chore-modal" style="display: inline-block;" id="chore-available-modal-{{ chore.pk }}">Action</div>
-                        <div class="innerBlock" style="display: inline-block;" onclick="window.location.href='{% url 'toggle_availability' chore.pk %}';">Disable</div>
+                        <div class="chore-modal">
+                            <div class="innerBlock" id="chore-available-modal-{{ chore.pk }}">Action</div>
+                            <div class="innerBlock" onclick="window.location.href='{% url 'toggle_availability' chore.pk %}';">Disable</div>
+                        </div>
                         <div class="chore-options" id="chore-available-options-{{ chore.pk }}" style="display: none;">
                             <div class="block opaque">
                                 <div class="innerBlock" onclick="window.location.href='{% url 'edit_chore' chore.pk %}'">Edit</div>
@@ -137,9 +139,9 @@
                     </td>
                     <td>{{ chore.points }} {% if chore.earlyBonus %} ++ {% endif %}</td>
                     <td class="table-min-width">
-                        <div class="chore-modal" id="chore-unavailable-modal-{{ chore.pk }}">
-                            <div class="innerBlock" style="display: inline-block;">Action</div>
-                            <div class="innerBlock" style="display: inline-block;"  onclick="window.location.href='{% url 'toggle_availability' chore.pk %}';">Enable</div>
+                        <div class="chore-modal">
+                            <div class="innerBlock" id="chore-unavailable-modal-{{ chore.pk }}">Action</div>
+                            <div class="innerBlock" onclick="window.location.href='{% url 'toggle_availability' chore.pk %}';">Enable</div>
                             <div style="clear: both;"></div>
                         </div>
                         <div class="chore-options" id="chore-unavailable-options-{{ chore.pk }}" style="display: none;">
