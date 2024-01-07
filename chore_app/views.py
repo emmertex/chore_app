@@ -103,8 +103,7 @@ def child_profile(request):
     claimed_chores = models.ChoreClaim.objects.filter(user=request.user).select_related('chore')
     filtered_chores = chores.exclude(
         name__in=claimed_chores.values_list('choreName', flat=True)
-    )
-    filtered_chores = chores.exclude(
+    ).exclude(
         (Q(availableTime__gte=0, availableTime__gt=current_time.hour) |
         Q(availableTime__lt=0, availableTime__gt=-current_time.hour)) &
         ~Q(availableTime__exact=0)
@@ -386,6 +385,7 @@ def incomplete_chore_penalty(approver, child, settings):
 # Reset Daily Chores to Available, and clear claimed chores
 def reset_daily_chores():
     models.ChoreClaim.objects.filter(approved__gt=0).delete()
+    models.ChoreClaim.objects.filter(approved__lt=0).delete()       # Young kids can be weird
     models.Chore.objects.filter(daily=True).update(available=True)
 
 @login_required
