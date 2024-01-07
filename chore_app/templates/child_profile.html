@@ -55,7 +55,7 @@
                     {% if chore not in claimed_chores %}
                         <div class="innerBlock" onclick="window.location.href='{% url 'claim_chore' chore.pk %}'">
                             <div class="buttonContainer">
-                                <div class="choreLeft">{{ chore.name }} <div style="font-size: smaller;">
+                                <div class="choreLeft">{{ chore.name }} <div class="small-text description">
                                     {{ chore.comment }}
                                   </div></div>
                                 <div class="choreRight">{{ chore.points }} {% if chore.earlyBonus and bonus %} + {{ chore.points|halve }} {% endif %}</div>
@@ -65,13 +65,20 @@
                 {% empty %}
                     <div class="innerBlock" onclick="window.location.href='{% url 'claim_chore' chore.pk %}'">
                         <div class="buttonContainer">
-                            <div class="choreLeft">{{ chore.name }} <div style="font-size: smaller;">
+                            <div class="choreLeft">{{ chore.name }} <div class="small-text description">
                                 {{ chore.comment }}
                               </div></div>
                             <div class="choreRight">{{ chore.points }} {% if chore.earlyBonus and bonus %} + {{ chore.points|halve }} {% endif %}</div>
                         </div>
                     </div>
                 {% endfor %}
+                <div class="innerBlock">
+                    {% for points in chore_points|slice:":3" %}
+                        <div>
+                            {% if forloop.counter0 == 0 %}🏆{% elif forloop.counter0 == 1 %}🥈{% elif forloop.counter0 == 2 %}🥉{% endif %} {{ points.user__username }} with {{ points.total_points }} points.
+                        </div>
+                    {% endfor %}
+                </div>
             {% else %}
                 {% for points in chore_points|slice:":3" %}
                     <div class="innerBlock v{{ forloop.counter0 }}">

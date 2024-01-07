@@ -194,7 +194,7 @@ def claim_chore(request, pk):
                 and current_time > datetime.time(5) \
                 and chore.earlyBonus:
                 addPoints = chore.points * ((models.Settings.objects.get(key='bonus_percent').value + 100) / 100)
-                comment = 'Early Bonus'
+                comment = 'Early Bonus of ' + str(chore.earlyBonus) + ' points: ' + chore.comment
             else:
                 addPoints = chore.points
                 comment = chore.comment

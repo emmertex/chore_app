@@ -35,7 +35,7 @@
             <tbody>
                 {% for chore_claim in claimed_chores %}
                 <tr>
-                    <td>{{ chore_claim.choreName }} <div style="font-size: smaller;">
+                    <td>{{ chore_claim.choreName }} <div class="small-text description">
                       {{ chore_claim.comment }}
                     </div></td>
                     <td>{{ chore_claim.points }}</td>
@@ -77,10 +77,10 @@
                 {% for chore in available_chores %}
                 <tr>
                     <td>{{ chore.name }}    
-                        <div style="font-size: smaller;">
+                        <div class="small-text description">
                             {{ chore.comment }}
                           </div>                    
-                        <div style="font-size: smaller; color: darkcyan;">
+                        <div class="small-text time">
                             {% if chore.availableTime == -24 %}
                             {% elif chore.availableTime < 0 %}
                                 Available Before {{ chore.availableTime|abs_filter }}:00
@@ -123,10 +123,10 @@
             <tbody>
                 {% for chore in unavailable_chores %}
                 <tr>
-                    <td>{{ chore.name }} <div style="font-size: smaller;">
+                    <td>{{ chore.name }} <div class="small-text description">
                         {{ chore.comment }}
                       </div>
-                        <div style="font-size: smaller; color: darkcyan;">
+                        <div class="small-text time">
                             {% if chore.availableTime == -24 %}
                             {% elif chore.availableTime < 0 %}
                                 Available Before {{ chore.availableTime|abs_filter }}:00

@@ -287,3 +287,15 @@ code {
     width: 1%;
     white-space: nowrap;
 }
+
+.small-text {
+    font-size: 12px;
+}
+
+.small-text.time {
+    color: #d09bff;
+}
+
+.small-text.description {
+    color: #a395a2;
+}
