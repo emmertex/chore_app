@@ -77,10 +77,22 @@ def parent_profile(request):
     paginator = Paginator(point_logs, 20)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
+
+    chore_points = models.PointLog.objects.filter(
+        date_recorded__date=datetime.date.today()
+    ).exclude(
+        chore=''
+    ).values(
+        'user', 'user__username'
+    ).annotate(
+        total_points=Sum('points_change')
+    ).order_by('-total_points')
+
     context = {
         'available_chores': models.Chore.objects.filter(available=True),
         'unavailable_chores': models.Chore.objects.filter(available=False),
         'claimed_chores': models.ChoreClaim.objects.filter(approved=0).select_related('chore'),
+        'chore_points': chore_points,
         'point_logs': page_obj,
         'children': models.User.objects.filter(role='Child'),
     }

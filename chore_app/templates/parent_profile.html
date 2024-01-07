@@ -4,6 +4,7 @@
 
 <head>
     <title>{{ user.username }}'s Dashboard</title>
+    <meta http-equiv="refresh" content="60">
     {% load static %}
     <link rel="stylesheet" href="{% static 'styles.css' %}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -75,7 +76,8 @@
 
         {% if available_chores %}
         <div class="block">
-            <h3>Available Chores</h3>
+            <h3 class="toggle" data-target="#availableContent">Available Chores</h3>
+            <div id="availableContent">
             <table>
                 <thead>
                     <tr>
@@ -92,8 +94,7 @@
                                 {{ chore.comment }}
                             </div>
                             <div class="small-text time">
-                                {% if chore.availableTime < 0 %} Available Before {{ chore.availableTime|abs_filter
-                                    }}:00 {% elif chore.availableTime> 0 %}
+                                {% if chore.availableTime < 0 %} Available Before {{ chore.availableTime|abs_filter }}:00 {% elif chore.availableTime > 0 %}
                                     Available After {{ chore.availableTime }}:00
                                     {% endif %}
                             </div>
@@ -126,12 +127,14 @@
                     {% endfor %}
                 </tbody>
             </table>
+            </div>
         </div>
         {% endif %}
 
         {% if unavailable_chores %}
         <div class="block">
-            <h3> Unavailable Chores</h3>
+            <h3 class="toggle" data-target="#unavailableContent">Unavailable Chores</h3>
+            <div id="unavailableContent">
             <table>
                 <thead>
                     <tr>
@@ -183,6 +186,7 @@
                     {% endfor %}
                 </tbody>
             </table>
+            </div>
         </div>
         {% endif %}
 
@@ -226,11 +230,18 @@
                     {% endfor %}
                 </tbody>
             </table>
+            <h3>Todays Leaderboard</h3>
+            {% for points in chore_points|slice:":3" %}
+            <div>
+                {% if forloop.counter0 == 0 %}🏆{% elif forloop.counter0 == 1 %}🥈{% elif forloop.counter0 == 2
+                %}🥉{% endif %} {{ points.user__username }} with {{ points.total_points }} points.
+            </div>
+            {% endfor %}
         </div>
 
         <div class="bigblock">
-            <h3>Point Log</h2>
-
+                <h3 class="toggle" data-target="#logContent">Point Log</h3>
+                <div id="logContent" style="display: none;">
                 <table class="table table-striped">
                     <thead>
                         <tr>
@@ -272,10 +283,20 @@
                         {% endif %}
                     </span>
                 </div>
+                </div>
         </div>
     </div>
 
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
+        // Collapsable div
+        $(document).ready(function() {
+            $(".toggle").click(function() {
+                var target = $(this).data('target');
+                $(target).toggle();
+            });
+        });
+
         // Chore Claim Modal
         function initializeChoreClaimModals() {
             document.querySelectorAll('[id^="chore-claim-modal-"]').forEach(function (modalTrigger) {
