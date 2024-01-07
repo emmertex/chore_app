@@ -81,8 +81,7 @@
                             {{ chore.comment }}
                           </div>                    
                         <div class="small-text time">
-                            {% if chore.availableTime == -24 %}
-                            {% elif chore.availableTime < 0 %}
+                            {% if chore.availableTime < 0 %}
                                 Available Before {{ chore.availableTime|abs_filter }}:00
                             {% elif chore.availableTime > 0 %}
                                 Available After {{ chore.availableTime }}:00
@@ -129,8 +128,7 @@
                         {{ chore.comment }}
                       </div>
                         <div class="small-text time">
-                            {% if chore.availableTime == -24 %}
-                            {% elif chore.availableTime < 0 %}
+                            {% if chore.availableTime < 0 %}
                                 Available Before {{ chore.availableTime|abs_filter }}:00
                             {% elif chore.availableTime > 0 %}
                                 Available After {{ chore.availableTime }}:00

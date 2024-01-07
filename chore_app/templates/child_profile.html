@@ -63,9 +63,16 @@
                     {% if chore not in claimed_chores %}
                         <div class="innerBlock" onclick="window.location.href='{% url 'claim_chore' chore.pk %}'">
                             <div class="buttonContainer">
-                                <div class="choreLeft">{{ chore.name }} <div class="small-text description">
-                                    {{ chore.comment }}
-                                  </div></div>
+                                <div class="choreLeft">{{ chore.name }} 
+                                    <div class="small-text description">
+                                        {{ chore.comment }}
+                                  </div>
+                                  <div class="small-text time">
+                                    {% if chore.availableTime < 0 %}
+                                        Available Before {{ chore.availableTime|abs_filter }}:00
+                                    {% endif %}
+                                </div>
+                                </div>
                                 <div class="choreRight">{{ chore.points }} {% if chore.earlyBonus and bonus %} + {{ chore.points|halve }} {% endif %}</div>
                             </div>
                         </div>
@@ -75,7 +82,13 @@
                         <div class="buttonContainer">
                             <div class="choreLeft">{{ chore.name }} <div class="small-text description">
                                 {{ chore.comment }}
-                              </div></div>
+                              </div>
+                              <div class="small-text time">
+                                {% if chore.availableTime < 0 %}
+                                    Available Before {{ chore.availableTime|abs_filter }}:00
+                                {% endif %}
+                            </div>
+                            </div>
                             <div class="choreRight">{{ chore.points }} {% if chore.earlyBonus and bonus %} + {{ chore.points|halve }} {% endif %}</div>
                         </div>
                     </div>
