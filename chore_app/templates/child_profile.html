@@ -32,8 +32,7 @@
                 <h3>Todays Leaderboard</h3>
                 {% for points in chore_points|slice:":3" %}
                 <div>
-                    {% if forloop.counter0 == 0 %}🏆{% elif forloop.counter0 == 1 %}🥈{% elif forloop.counter0 == 2
-                    %}🥉{% endif %} {{ points.user__username }} with {{ points.total_points }} points.
+                    {% if forloop.counter0 == 0 %}🏆{% elif forloop.counter0 == 1 %}🥈{% elif forloop.counter0 == 2 %}🥉{% endif %} {{ points.user__username }} with {{ points.total_points }} points.
                 </div>
                 {% endfor %}
             </div>
