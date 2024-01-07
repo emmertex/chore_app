@@ -35,7 +35,9 @@ h3 {
 }
 
 /* Headings */
-h4, h5, h6 {
+h4,
+h5,
+h6 {
     margin: 10px 0;
     color: #b9d8f6;
 }
@@ -52,7 +54,8 @@ table {
     border: 1px solid #525860;
 }
 
-th, td {
+th,
+td {
     padding: 10px;
     text-align: left;
     border: 1px solid #525860;
@@ -90,7 +93,7 @@ code {
     font-weight: bolder;
     text-align: center;
     color: transparent;
-    background-image: linear-gradient(45deg, #5e66ff,#cd5aff, #ff5cb0,#cd5aff,#5e66ff);
+    background-image: linear-gradient(45deg, #5e66ff, #cd5aff, #ff5cb0, #cd5aff, #5e66ff);
     background-size: 300% auto;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -109,18 +112,20 @@ code {
     /* height: 24px; */
     word-wrap: normal;
 }
+
 .choreLeft {
     color: white;
     text-align: left;
     font-size: 18px;
     font-weight: normal;
 }
+
 .choreRight {
     text-align: right;
     font-size: 20px;
     font-weight: bolder;
     color: transparent;
-    background-image: linear-gradient(45deg, #5e66ff,#cd5aff, #ff5cb0,#cd5aff,#5e66ff);
+    background-image: linear-gradient(45deg, #5e66ff, #cd5aff, #ff5cb0, #cd5aff, #5e66ff);
     background-size: 300% auto;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -154,23 +159,29 @@ code {
 }
 
 @keyframes rainbow {
-    0% { background-position: 200% 50%; }
-    100% { background-position: -100% 50%; }
+    0% {
+        background-position: 200% 50%;
+    }
+
+    100% {
+        background-position: -100% 50%;
+    }
 }
+
 .container {
     display: flex;
     flex-wrap: wrap;
-  }
-  
+}
+
 .block {
-  flex: 1 0 400px;
-  max-width: 100%;
-  margin: 10px;
-  background-color: rgba(0, 0, 0, 0.2);
-  border-radius: 15px;
-  padding: 10px;
-  padding-left: 15px;
-  padding-right: 15px;
+    flex: 1 0 400px;
+    max-width: 100%;
+    margin: 10px;
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 15px;
+    padding: 10px;
+    padding-left: 15px;
+    padding-right: 15px;
 }
 
 .block.opaque {
@@ -218,53 +229,52 @@ code {
 .innerBlock.v0 {
     overflow: hidden;
     animation: flashLine 2s infinite;
-    background: linear-gradient(70deg, transparent,  gold 40px, transparent, transparent);
-    background-size: 200% auto;   
+    background: linear-gradient(70deg, transparent, gold 40px, transparent, transparent);
+    background-size: 200% auto;
 }
 
 .innerBlock.v1 {
     overflow: hidden;
     animation: flashLine 2s infinite;
-    background: linear-gradient(70deg, transparent,  rgb(150, 150, 150) 40px, transparent, transparent);
-    background-size: 200% auto;   
+    background: linear-gradient(70deg, transparent, rgb(150, 150, 150) 40px, transparent, transparent);
+    background-size: 200% auto;
 }
 
 .innerBlock.v2 {
     overflow: hidden;
     animation: flashLine 2s infinite;
-    background: linear-gradient(70deg, transparent,  rgb(255, 155, 84) 40px, transparent, transparent);
-    background-size: 200% auto;   
+    background: linear-gradient(70deg, transparent, rgb(255, 155, 84) 40px, transparent, transparent);
+    background-size: 200% auto;
 }
 
 .innerBlock.approved {
     overflow: hidden;
     animation: flashLine 2s infinite;
-    background: linear-gradient(70deg, transparent,  rgb(0, 255, 0) 40px, transparent, transparent);
-    background-size: 200% auto;   
+    background: linear-gradient(70deg, transparent, rgb(0, 255, 0) 40px, transparent, transparent);
+    background-size: 200% auto;
 }
 
 @keyframes flashLine {
     0% {
         background-position: -100% 0;
     }
+
     100% {
         background-position: 100% 0;
     }
 }
 
 .bigblock {
-  flex: 1 0 90%;
-  max-width: 100%;
-  margin: 10px;
-  background-color: rgba(0, 0, 0, 0.2);
-  border-radius: 15px;
-  padding: 10px;
-  padding-left: 15px;
-  padding-right: 15px;
-  overflow: auto;
+    flex: 1 0 90%;
+    max-width: 100%;
+    margin: 10px;
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 15px;
+    padding: 10px;
+    padding-left: 15px;
+    padding-right: 15px;
+    overflow: auto;
 }
-
-
 
 .chore-options {
     z-index: 100;

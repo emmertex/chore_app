@@ -1,21 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
-<html>
+  <html>
+    <head>
+      <title>Extra Chore</title>
+      {% load static %}
+      <link rel="stylesheet" href="{% static 'styles.css' %}" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    </head>
 
-<head>
-    <title>Extra Chore</title>
-    {% load static %}
-    <link rel="stylesheet" href="{% static 'styles.css' %}">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-</head>
-
-<body>
-    <h1>Extra Chore</h1>
-    <form method="post">
+    <body>
+      <h1>Extra Chore</h1>
+      <form method="post">
         {% csrf_token %}
         {{ form.as_p }}
         <button type="submit">Create Chore</button>
-    </form>
-</body>
-
+      </form>
+    </body>
+  </html>
 </html>

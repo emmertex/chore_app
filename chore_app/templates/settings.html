@@ -1,36 +1,30 @@
 <!DOCTYPE html>
 <html lang="en">
-<html>
+  <html>
+    <head>
+      <title>Settings</title>
+      {% load static %}
+      <link rel="stylesheet" href="{% static 'styles.css' %}" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    </head>
 
-<head>
-    <title>Settings</title>
-    {% load static %}
-    <link rel="stylesheet" href="{% static 'styles.css' %}">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-</head>
-
-<body>
-
-    <div class="block">
+    <body>
+      <div class="block">
         <h2>Settings</h2>
 
         {% for setting in settings %}
-        <div class="innerBlock" onclick="window.location.href='{% url 'edit_settings' setting.pk %}'">
+          <div class="innerBlock" onclick="window.location.href='{% url 'edit_settings' setting.pk %}'">
             <div class="buttonContainer">
-                <div class="choreLeft">{{ setting.name }}</div>
-                <div class="choreRightClaimed">{{ setting.value }}</div>
+              <div class="choreLeft">{{ setting.name }}</div>
+              <div class="choreRightClaimed">{{ setting.value }}</div>
             </div>
-        </div>
+          </div>
         {% endfor %}
-    </div>
+      </div>
 
-    <div class="block">
-        <div class="innerBlock" onclick="window.location.href='{% url 'parent_profile' %}'">
-            Return to Parents Dashboard
-        </div>
-    </div>
-
-
-</body>
-
+      <div class="block">
+        <div class="innerBlock" onclick="window.location.href='{% url 'parent_profile' %}'">Return to Parents Dashboard</div>
+      </div>
+    </body>
+  </html>
 </html>

@@ -1,4 +1,4 @@
-if ! command -v screen &> /dev/null; then
+if ! command -v screen &>/dev/null; then
     echo "Screen is is not installed. Running in the foreground..."
     python3 manage.py runserver 0.0.0.0:8000
 else

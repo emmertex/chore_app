@@ -1,9 +1,9 @@
 [
     {
-        "model": "chore_app.Settings", 
+        "model": "chore_app.Settings",
         "pk": 1,
         "fields": {
-            "key": "daily_bonus",    
+            "key": "daily_bonus",
             "name": "Daily Bonus Points",
             "value": 240
         }

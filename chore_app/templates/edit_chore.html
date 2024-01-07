@@ -1,20 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
-<html>
+  <html>
+    <head>
+      <title>Edit Chore</title>
+      {% load static %}
+      <link rel="stylesheet" href="{% static 'styles.css' %}" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    </head>
 
-<head>
-    <title>Edit Chore</title>
-    {% load static %}
-    <link rel="stylesheet" href="{% static 'styles.css' %}">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-</head>
-
-<body>
-    <form method="post">
+    <body>
+      <form method="post">
         {% csrf_token %}
         {{ form.as_p }}
         <button type="submit">Save Changes</button>
-    </form>
-</body>
-
+      </form>
+    </body>
+  </html>
 </html>

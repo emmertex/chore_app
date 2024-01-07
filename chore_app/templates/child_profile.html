@@ -22,205 +22,213 @@
             <h2>Points</h2>
             <span class="rainbow-text">{{ points }}</span>
             <h4>Game Money: ${{ pocket_money }}</h4>
-            <h4>Awards: 
-                🏆<span style="color: yellow;">{{ user.place_1 }}</span>  
-                🥈<span style="color: silver">{{ user.place_2 }}</span>  
+            <h4>Awards:
+                🏆<span style="color: yellow;">{{ user.place_1 }}</span>
+                🥈<span style="color: silver">{{ user.place_2 }}</span>
                 🥉<span style="color: orange">{{ user.place_3 }}</span>
             </h4>
             <div class="innerBlock">
                 <h3>Todays Leaderboard</h3>
                 {% for points in chore_points|slice:":3" %}
-                    <div>
-                        {% if forloop.counter0 == 0 %}🏆{% elif forloop.counter0 == 1 %}🥈{% elif forloop.counter0 == 2 %}🥉{% endif %} {{ points.user__username }} with {{ points.total_points }} points.
-                    </div>
+                <div>
+                    {% if forloop.counter0 == 0 %}🏆{% elif forloop.counter0 == 1 %}🥈{% elif forloop.counter0 == 2
+                    %}🥉{% endif %} {{ points.user__username }} with {{ points.total_points }} points.
+                </div>
                 {% endfor %}
             </div>
-            <div class="innerBlock"  onclick="window.location.href='{% url 'child_chore' %}'" class="open-chore-modal">
+            <div class="innerBlock" onclick="window.location.href='{% url 'child_chore' %}'" class="open-chore-modal">
                 Create a custom chore
             </div>
             {% if user.points_balance > minimum_points %}
-            <div class="innerBlock" onclick="if (confirm('Are you sure you want to convert your points?')) {window.location.href='{% url 'convert_points_to_money' user.pk %}' }">
+            <div class="innerBlock"
+                onclick="if (confirm('Are you sure you want to convert your points?')) {window.location.href='{% url 'convert_points_to_money' user.pk %}' }">
                 Convert 100 Points to ${{ pocket_money_amount }} Pocket Money
             </div>
             {% endif %}
         </div>
 
         <div class="block">
-            <h2> 
+            <h2>
                 {% if chores %}
                 Available Chores
                 {% else %}
                 Leaderboard
                 {% endif %}
-             </h2>
+            </h2>
             {% if bonus %}
             50% Bonus Points on some Chores if complete before 2PM!
             {% endif %}
 
             {% if chores %}
-                {% load extra_filters %}
-                {% for chore in chores %}
-                    {% if chore not in claimed_chores %}
-                        <div class="innerBlock" onclick="window.location.href='{% url 'claim_chore' chore.pk %}'">
-                            <div class="buttonContainer">
-                                <div class="choreLeft">{{ chore.name }} 
-                                    <div class="small-text description">
-                                        {{ chore.comment }}
-                                  </div>
-                                  <div class="small-text time">
-                                    {% if chore.availableTime < 0 %}
+            {% load extra_filters %}
+            {% for chore in chores %}
+            {% if chore not in claimed_chores %}
+            <div class="innerBlock" onclick="window.location.href='{% url 'claim_chore' chore.pk %}'">
+                <div class="buttonContainer">
+                    <div class="choreLeft">{{ chore.name }}
+                        <div class="small-text description">
+                            {{ chore.comment }}
+                        </div>
+                        <div class="small-text time">
+                            {% if chore.availableTime < 0 %}
                                         Available Before {{ chore.availableTime|abs_filter }}:00
                                     {% endif %}
                                 </div>
-                                </div>
-                                <div class="choreRight">{{ chore.points }} {% if chore.earlyBonus and bonus %} + {{ chore.points|halve }} {% endif %}</div>
-                            </div>
                         </div>
-                    {% endif %}
+                        <div class="choreRight">{{ chore.points }} {% if chore.earlyBonus and bonus %} + {{
+                            chore.points|halve }} {% endif %}</div>
+                    </div>
+                </div>
+                {% endif %}
                 {% empty %}
-                    <div class="innerBlock" onclick="window.location.href='{% url 'claim_chore' chore.pk %}'">
-                        <div class="buttonContainer">
-                            <div class="choreLeft">{{ chore.name }} <div class="small-text description">
+                <div class="innerBlock" onclick="window.location.href='{% url 'claim_chore' chore.pk %}'">
+                    <div class="buttonContainer">
+                        <div class="choreLeft">{{ chore.name }} <div class="small-text description">
                                 {{ chore.comment }}
-                              </div>
-                              <div class="small-text time">
+                            </div>
+                            <div class="small-text time">
                                 {% if chore.availableTime < 0 %}
                                     Available Before {{ chore.availableTime|abs_filter }}:00
                                 {% endif %}
                             </div>
-                            </div>
-                            <div class="choreRight">{{ chore.points }} {% if chore.earlyBonus and bonus %} + {{ chore.points|halve }} {% endif %}</div>
+                            <div class="choreRight">{{ chore.points }} {% if chore.earlyBonus and bonus %} + {{
+                                chore.points|halve }} {% endif %}</div>
                         </div>
                     </div>
-                {% endfor %}
-            {% else %}
-                {% for points in chore_points|slice:":3" %}
-                    <div class="innerBlock v{{ forloop.counter0 }}">
-                        {% if forloop.counter0 == 0 %}🏆{% elif forloop.counter0 == 1 %}🥈{% elif forloop.counter0 == 2 %}🥉{% endif %} {{ points.user__username }} with {{ points.total_points }} points.       
-                    </div>
-                {% endfor %}
-            {% endif %}
-
-        </div>
-
-        <div class="block">
-            <h2>Claimed Chores</h2>
-
-            {% for cchore in claimed_chores %}
-                {% if cchore.approved == 0 %}
-                    <div class="innerBlock" onclick="window.location.href='{% url 'return_chore' cchore.pk %}'">
-                {% else %}
-                    <div class="innerBlock approved">
-                {% endif %}
-                        <div class="buttonContainer">
-                            <div class="choreLeft">{{ cchore.choreName }} <div class="small-text description">
-                                {{ cchore.comment }}
-                              </div></div>
-                            {% if cchore.approved > 0 %}
-                                <div class="choreRightClaimed">Approved for {{ cchore.approved }}</div>
-                            {% else %}
-                                <div class="choreRightClaimed">{{ cchore.points }}</div>
-                            {% endif %}
-                        </div>
-                    </div>
-                    
-            {% endfor %}
-        </div>
-
-        <div class="bigblock">
-            <h2>Point Log</h2>
-
-            <table class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th>Chore</th>
-                        <th>Points Change</th>
-                        <th>Penalty</th>
-                        <th>Reason</th>
-                        <th>Approver</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for point_log in point_logs %}
-                    <tr>
-                        <td>{{ point_log.date_recorded|date:"M d, Y" }}</td>
-                        <td>{{ point_log.chore }}</td>
-                        <td>{{ point_log.points_change }}</td>
-                        <td>{{ point_log.penalty }} %</td>
-                        <td><pre>{{ point_log.reason }}</pre></td>
-                        <td>{% if point_log.approver %}{{ point_log.approver.username }}{% else %}-{% endif %}</td>
-                    </tr>
                     {% endfor %}
-                </tbody>
-            </table>
-            <div class="pagination">
-                <span class="step-links">
-                    {% if point_logs.has_previous %}
-                        <a href="?page=1">&laquo; first</a>
-                        <a href="?page={{ point_logs.previous_page_number }}">previous</a>
+                    {% else %}
+                    {% for points in chore_points|slice:":3" %}
+                    <div class="innerBlock v{{ forloop.counter0 }}">
+                        {% if forloop.counter0 == 0 %}🏆{% elif forloop.counter0 == 1 %}🥈{% elif forloop.counter0 == 2 %}🥉{% endif %} {{ points.user__username }} with {{ points.total_points }} points.
+                    </div>
+                    {% endfor %}
                     {% endif %}
-            
-                    <span class="current-page">{{ point_logs.number }}</span>
-            
-                    {% if point_logs.has_next %}
-                        <a href="?page={{ point_logs.next_page_number }}">next</a>
-                        <a href="?page={{ point_logs.paginator.num_pages }}">last &raquo;</a>
-                    {% endif %}
-                </span>
-            </div>
+
+                </div>
+
+                <div class="block">
+                    <h2>Claimed Chores</h2>
+
+                    {% for cchore in claimed_chores %}
+                    {% if cchore.approved == 0 %}
+                    <div class="innerBlock" onclick="window.location.href='{% url 'return_chore' cchore.pk %}'">
+                        {% else %}
+                        <div class="innerBlock approved">
+                            {% endif %}
+                            <div class="buttonContainer">
+                                <div class="choreLeft">{{ cchore.choreName }} <div class="small-text description">
+                                        {{ cchore.comment }}
+                                    </div>
+                                </div>
+                                {% if cchore.approved > 0 %}
+                                <div class="choreRightClaimed">Approved for {{ cchore.approved }}</div>
+                                {% else %}
+                                <div class="choreRightClaimed">{{ cchore.points }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        {% endfor %}
+                    </div>
+
+                    <div class="bigblock">
+                        <h2>Point Log</h2>
+
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Chore</th>
+                                    <th>Points Change</th>
+                                    <th>Penalty</th>
+                                    <th>Reason</th>
+                                    <th>Approver</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for point_log in point_logs %}
+                                <tr>
+                                    <td>{{ point_log.date_recorded|date:"M d, Y" }}</td>
+                                    <td>{{ point_log.chore }}</td>
+                                    <td>{{ point_log.points_change }}</td>
+                                    <td>{{ point_log.penalty }} %</td>
+                                    <td><pre>{{ point_log.reason }}</pre></td>
+                                    <td>{% if point_log.approver %}{{ point_log.approver.username }}{% else %}-{% endif %}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                        <div class="pagination">
+                            <span class="step-links">
+                                {% if point_logs.has_previous %}
+                                <a href="?page=1">&laquo; first</a>
+                                <a href="?page={{ point_logs.previous_page_number }}">previous</a>
+                                {% endif %}
+
+                                <span class="current-page">{{ point_logs.number }}</span>
+
+                                {% if point_logs.has_next %}
+                                <a href="?page={{ point_logs.next_page_number }}">next</a>
+                                <a href="?page={{ point_logs.paginator.num_pages }}">last &raquo;</a>
+                                {% endif %}
+                            </span>
+                        </div>
 
 
-        </div>
+                    </div>
 
-        <div class="bigblock">
-            <h2>Help / Explanation</h2>
-            <ul>
-                <li>Earning Points</li>
-                <ul>
-                    <li>Bonus Points are only available in the morning, don't let it slip away!</li>
-                    <li>Missing a chore? Add it as a custom one for points!</li>
-                    <li>Every day starts with a free point boost!</li>
-                    <li>Aim to be #1 on the leaderboard for more points!</li>
-                </ul>
-                <li>Leaderboard Points</li>
-                <ul>
-                    <li>Points are awarded based on Approved Chores</li>
-                    <li>Your trophy is based on your rank, and is permenantly recorded</li>
-                    <li>Collect those Trophies!</li>
-                    <li>At the end of the day, you get your award for your work</li>
-                    <ul>
-                        <li>First Place: 50 Points</li>
-                        <li>Second Place: 25 Points</li>
-                        <li>Third Place: 10 Points</li>
-                    </ul>
-                </ul>
-                <li>Spending Points</li>
-                <ul>
-                    <li>Every minute of time spent on screens, such as iPad, TV, Computer and XBox, cost 1 point</li>
-                    <li>If over 300 points are available, you can convert 100 points to game money.</li>
-                    <li>Game Money is can be used for IAP.  Money for IAP can not be gained any other way.</li>
-                </ul>
-                <li>Penalties</li>
-                <ul>
-                    <li>All chores claimed must be approved, and may incur penalties for incomplete work</li>
-                    <li>Be thorough! Unfinished chores get a 50% point penalty.</li>
-                </ul>
-                <li>Adjustments, Refunds of points</li>
-                <ul>
-                    <li>If you watched YouTube on iPad while playing on XBox for an example, ask for a refund</li>
-                    <li>If you left a game running by accident, ask for a refund</li>
-                    <li>If the game was educational, ask for a refund</li>
-                </ul>
+                    <div class="bigblock">
+                        <h2>Help / Explanation</h2>
+                        <ul>
+                            <li>Earning Points</li>
+                            <ul>
+                                <li>Bonus Points are only available in the morning, don't let it slip away!</li>
+                                <li>Missing a chore? Add it as a custom one for points!</li>
+                                <li>Every day starts with a free point boost!</li>
+                                <li>Aim to be #1 on the leaderboard for more points!</li>
+                            </ul>
+                            <li>Leaderboard Points</li>
+                            <ul>
+                                <li>Points are awarded based on Approved Chores</li>
+                                <li>Your trophy is based on your rank, and is permenantly recorded</li>
+                                <li>Collect those Trophies!</li>
+                                <li>At the end of the day, you get your award for your work</li>
+                                <ul>
+                                    <li>First Place: 50 Points</li>
+                                    <li>Second Place: 25 Points</li>
+                                    <li>Third Place: 10 Points</li>
+                                </ul>
+                            </ul>
+                            <li>Spending Points</li>
+                            <ul>
+                                <li>Every minute of time spent on screens, such as iPad, TV, Computer and XBox, cost 1
+                                    point</li>
+                                <li>If over 300 points are available, you can convert 100 points to game money.</li>
+                                <li>Game Money is can be used for IAP. Money for IAP can not be gained any other way.
+                                </li>
+                            </ul>
+                            <li>Penalties</li>
+                            <ul>
+                                <li>All chores claimed must be approved, and may incur penalties for incomplete work
+                                </li>
+                                <li>Be thorough! Unfinished chores get a 50% point penalty.</li>
+                            </ul>
+                            <li>Adjustments, Refunds of points</li>
+                            <ul>
+                                <li>If you watched YouTube on iPad while playing on XBox for an example, ask for a
+                                    refund</li>
+                                <li>If you left a game running by accident, ask for a refund</li>
+                                <li>If the game was educational, ask for a refund</li>
+                            </ul>
 
-            </ul>
-            <form action="{% url 'logout' %}" method="post">
-                {% csrf_token %}
-                <button type="submit">Logout</button>
-              </form>
-        </div>
+                        </ul>
+                        <form action="{% url 'logout' %}" method="post">
+                            {% csrf_token %}
+                            <button type="submit">Logout</button>
+                        </form>
+                    </div>
 
-    </div>
+                </div>
 </body>
 
 </html>
