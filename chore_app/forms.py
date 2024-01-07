@@ -19,6 +19,7 @@ class ChoreForm(forms.ModelForm):
             'availableTime': 'Time in which chore is available (+13 means after 1pm, -13 means before 1pm)'
         }
         widgets = {
+            'comment': forms.Textarea(attrs={'rows': 2, 'placeholder': 'Optional'}),
             'availableTime': forms.NumberInput(attrs={'type': 'number', 'step': 'any'})
         }
 
@@ -39,6 +40,7 @@ class EditChoreForm(forms.ModelForm):
             'availableTime': 'Time in which chore is available (+ for after, - for before, 0 for always available)'
         }
         widgets = {
+            'comment': forms.Textarea(attrs={'rows': 2, 'placeholder': 'Optional'}),
             'availableTime': forms.NumberInput(attrs={'type': 'number', 'step': 'any'})
         }
 
@@ -78,7 +80,7 @@ class CustomChildChore(forms.ModelForm):
             'comment': 'Any additional comments?'
         }
         widgets = {
-            'comment': forms.Textarea(attrs={'rows': 3, 'placeholder': 'Optional'}),
+            'comment': forms.Textarea(attrs={'rows': 2, 'placeholder': 'Optional'}),
             'points': forms.NumberInput(attrs={'type': 'number', 'step': 'any'})
         }
 

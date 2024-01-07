@@ -75,8 +75,7 @@
                                     {% endif %}
                                 </div>
                         </div>
-                        <div class="choreRight">{{ chore.points }} {% if chore.earlyBonus and bonus %} + {{
-                            chore.points|halve }} {% endif %}</div>
+                        <div class="choreRight">{{ chore.points }} {% if chore.earlyBonus and bonus %} + {{ chore.points|halve }} {% endif %}</div>
                     </div>
                 </div>
                 {% endif %}
@@ -91,8 +90,7 @@
                                     Available Before {{ chore.availableTime|abs_filter }}:00
                                 {% endif %}
                             </div>
-                            <div class="choreRight">{{ chore.points }} {% if chore.earlyBonus and bonus %} + {{
-                                chore.points|halve }} {% endif %}</div>
+                            <div class="choreRight">{{ chore.points }} {% if chore.earlyBonus and bonus %} + {{ chore.points|halve }} {% endif %}</div>
                         </div>
                     </div>
                     {% endfor %}
