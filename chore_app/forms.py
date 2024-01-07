@@ -15,6 +15,9 @@ class ChoreForm(forms.ModelForm):
             'earlyBonus': 'Early Bonus Points if done early',
             'availableTime': 'Time in which chore is available (+13 means after 1pm, -13 means before 1pm)' 
         }
+        widgets = {
+            'availableTime': forms.NumberInput(attrs={'type': 'number', 'step': 'any'})
+        }
 
 class EditChoreForm(forms.ModelForm):
     class Meta:
@@ -29,6 +32,9 @@ class EditChoreForm(forms.ModelForm):
             'persistent': 'Available for All Children',
             'earlyBonus': 'Early Bonus Points if done early',
             'availableTime': 'Time in which chore is available (+ for after, - for before, 0 for always available)' 
+        }
+        widgets = {
+            'availableTime': forms.NumberInput(attrs={'type': 'number', 'step': 'any'})
         }
 
 class PointAdjustmentForm(forms.ModelForm):
@@ -66,4 +72,17 @@ class CustomChildChore(forms.ModelForm):
         widgets = {
             'comment': forms.Textarea(attrs={'rows': 3, 'placeholder': 'Optional'}),
             'points': forms.NumberInput(attrs={'type': 'number', 'step': 'any'})
+        }
+
+class EditSettingsForm(forms.ModelForm):
+    class Meta:
+        model = Settings
+        fields = ['key', 'name', 'value']
+        labels = {
+            'key': 'Key',
+            'name': 'Name of Setting',
+            'value': 'Value of Setting'
+        }
+        widgets = {
+            'key': forms.TextInput(attrs={'readonly': 'readonly'}),
         }
