@@ -213,6 +213,7 @@
                         <th>Name</th>
                         <th>Points</th>
                         <th>Money</th>
+                        <th>Trophies</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -222,6 +223,7 @@
                         <td>{{ child.username }}</td>
                         <td>{{ child.points_balance }}</td>
                         <td>{{ child.pocket_money }}</td>
+                        <td>🏆{{ child.place_1 }} 🥈{{ child.place_2 }} 🥉{{ child.place_3 }}</td>
                         <td>
                             <a href="{% url 'point_adjustment' child.pk %}">Adjust Points</a><br>
                             <a href="{% url 'pocket_money_adjustment' child.pk %}">Adjust Pocket Money</a>
