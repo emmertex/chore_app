@@ -28,6 +28,7 @@
                 🥈<span style="color: silver">{{ user.place_2 }}</span>
                 🥉<span style="color: orange">{{ user.place_3 }}</span>
             </h4>
+            {% if chore_points %}
             <div class="innerBlock">
                 <h3>Todays Leaderboard</h3>
                 {% for points in chore_points|slice:":3" %}
@@ -36,6 +37,7 @@
                 </div>
                 {% endfor %}
             </div>
+            {% endif %}
             <div class="innerBlock" onclick="window.location.href='{% url 'child_chore' %}'" class="open-chore-modal">
                 Create a custom chore
             </div>
