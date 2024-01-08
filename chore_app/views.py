@@ -134,6 +134,8 @@ def child_profile(request):
         ~Q(availableTime__exact=0)
     )
 
+    settings = {setting.key: setting.value for setting in models.Settings.objects.all()}
+
     context = {
         'minimum_points': models.Settings.objects.get(key='max_points').value / 2,
         'pocket_money': request.user.pocket_money / 100,
@@ -143,7 +145,11 @@ def child_profile(request):
         'chores': filtered_chores,
         'chore_points': chore_points,
         'point_logs': page_obj,  # Use the paginated page_obj instead of the original queryset
-        'claimed_chores': claimed_chores
+        'claimed_chores': claimed_chores,
+        'max_points': settings['max_points'],
+        'min_points': settings['min_points'],
+        'leaderboard_awards': settings['leaderboard_awards'],
+        'incomplete_chores_penalty': settings['incomplete_chores_penalty'],
     }
     response = render(request, 'child_profile.html', context)
     response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
