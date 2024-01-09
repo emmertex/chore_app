@@ -40,10 +40,7 @@
                             </div>
                         </div>
                     
-                        <div class="innerBlock edit" id="chore-unavailable-modal-{{ chore.pk }}">✏️
-                        
-                        
-
+                        <div class="innerBlock edit" id="chore-claim-modal-{{ chore_claim.pk }}">✏️
                             <div class="chore-options" id="chore-claim-options-{{ chore_claim.pk }}" style="display: none;">
                                 <div class="block opaque">
                                     <div class="innerBlock green"
@@ -161,8 +158,7 @@
             <h3>Actions</h3>
             <div class="innerBlock"
                 onclick="if (confirm('Are you sure you want to perform this action?')) { window.location.href='{% url 'daily_action' %}' }">
-                Daily Action<br><span style="font-size: smaller;">Distribute points, and make Daily Chores
-                    available</span>
+                Daily Action<br><span style="font-size: smaller;">If cron jobs are enabled, this runs automatically every night at 23:30.  Do not run this more than once a day unless testing choreOptions.style.display.</span>
             </div>
             <div class="innerBlock" onclick="window.location.href='{% url 'create_chore' %}'" class="open-chore-modal">
                 Create New Chore

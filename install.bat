@@ -14,7 +14,7 @@ if %errorlevel% neq 0 (
 where django-admin >nul 2>nul
 if %errorlevel% neq 0 (
     echo Django is not installed. Installing...
-    python -m pip install django django-allauth 
+    python -m pip install django django-allauth django-cron
 )
 
 python manage.py makemigrations
@@ -27,3 +27,4 @@ if exist "%LOCK_FILE%" (
     python manage.py loaddata settings.json
     echo . > "%LOCK_FILE%"
 )
+ 
