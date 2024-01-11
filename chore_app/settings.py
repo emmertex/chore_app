@@ -76,6 +76,9 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'chore_app.wsgi.application'
 
+CRON_CLASSES = [
+    "chore_app.cron.NightlyAction",
+]
 
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
