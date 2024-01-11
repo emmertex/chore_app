@@ -1,8 +1,7 @@
-# your_app/cron.py
-
 from django_cron import CronJobBase, Schedule
 from django.db.models import F, Q, Sum
 import chore_app.models as models
+import datetime
 
 class NightlyAction(CronJobBase):
     RUN_AT_TIMES = ['23:30']
@@ -59,7 +58,7 @@ def nightly_action(approver=None):
 def apply_leaderboard_scoring(approver, children, settings):
 
     # Sum all the points each child earned from chores today
-    chore_points = models.PointLog.objects.filter(date_recorded__date=datetime.date.today()).exclude(
+    chore_points = models.PointLog.objects.filter(date_recorded__date=datetime.date.today() - datetime.timedelta(days=1)).exclude(
         chore='').values('user', 'user__username').annotate(total_points=Sum('points_change')).order_by('-total_points')
 
     # Create text for the Leaderboard
