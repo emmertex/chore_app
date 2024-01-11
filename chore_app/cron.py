@@ -105,7 +105,7 @@ def apply_leaderboard_scoring(approver, children, settings):
 
 # Daily Bonus
 def apply_daily_bonus(approver, child, incomplete_chores_sum, settings):
-    points_balance = child.points_balance - incomplete_chores_sum
+    points_balance = child.points_balance + incomplete_chores_sum
     old_points_balance = points_balance
     pocket_money = child.pocket_money
 

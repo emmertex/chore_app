@@ -18,6 +18,14 @@
             <h1> {{ user.username }}'s Dashboard</h1>
         </div>
 
+        {% if daily_message.enabled %}
+        <div class="bigblock">
+            <h2> Daily Message </h2>
+            <div class="innerBlock">{{ daily_message.text }}
+            </div>
+        </div>
+        {% endif %}
+
 
 
         <div class="block">

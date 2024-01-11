@@ -70,5 +70,13 @@
             "name": "Incomplete Chores Penalty Percentage",
             "value": 50
         }
+    },
+    {
+        "model": "chore_app.Text",
+        "pk": 1,
+        "fields": {
+            "key": "daily_message",
+            "text": "Incomplete Chores Reward Percentage",
+        }
     }
 ]

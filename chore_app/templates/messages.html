@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+  <html>
+    <head>
+      <title>Messages</title>
+      {% load static %}
+      <link rel="stylesheet" href="{% static 'styles.css' %}" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    </head>
+
+    <body>
+      <div class="block">
+        <h2>Messages</h2>
+
+        {% for message in messages %}
+          <div class="innerBlock" onclick="window.location.href='{% url 'edit_text' message.pk %}'">
+            <div class="buttonContainer">
+              <div class="choreLeft">{{ message.text }}</div>
+              <div class="choreRightClaimed">{% if message.enabled %}Enabled{% else %}Disabled{% endif %}</div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+
+      <div class="block">
+        <div class="innerBlock" onclick="window.location.href='{% url 'parent_profile' %}'">Return to Parents Dashboard</div>
+      </div>
+    </body>
+  </html>
+</html>

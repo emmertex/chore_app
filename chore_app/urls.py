@@ -57,5 +57,7 @@ urlpatterns = [
 
     path('settings/', views.settings, name='settings'),
     path('edit_settings/<int:pk>/', views.edit_settings, name='edit_settings'),
+    path('messages/', views.messages, name='messages'),
+    path('edit_text/<int:pk>/', views.edit_text, name='edit_text'),
 
 ]

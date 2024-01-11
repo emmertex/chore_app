@@ -68,6 +68,32 @@ def edit_settings(request, pk):
     except:
         return redirect('parent_profile')
 
+@login_required
+def messages(request):
+    if request.user.role == 'Parent':
+        context = {
+            'messages': models.Text.objects.all()
+        }
+        response = render(request, 'messages.html', context)
+        response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        return response
+    else:
+        return redirect('child_profile')
+
+@login_required
+def edit_text(request, pk):
+    try:
+        text = models.Text.objects.get(pk=pk)
+        if request.method == 'POST':
+            form = forms.EditTextForm(request.POST, instance=text)
+            if form.is_valid():
+                form.save()
+                return redirect('parent_profile')
+        else:
+            form = forms.EditTextForm(instance=text)
+        return render(request, 'edit_text.html', {'form': form, 'text': models.Text.objects.get(pk=pk)})
+    except:
+        return redirect('parent_profile')
 
 @login_required
 def parent_profile(request):
@@ -151,6 +177,7 @@ def child_profile(request):
         'min_points': settings['min_points'],
         'leaderboard_awards': settings['leaderboard_awards'],
         'incomplete_chores_penalty': settings['incomplete_chores_penalty'],
+        'daily_message': models.Text.objects.get(key='daily_message')
     }
     response = render(request, 'child_profile.html', context)
     response['Cache-Control'] = 'no-cache, no-store, must-revalidate'

@@ -1,6 +1,6 @@
 from django import forms
 
-from chore_app.models import Chore, ChoreClaim, PointLog, Settings, User
+from chore_app.models import Chore, ChoreClaim, PointLog, Settings, User, Text
 
 
 class ChoreForm(forms.ModelForm):
@@ -93,6 +93,18 @@ class EditSettingsForm(forms.ModelForm):
             'key': 'Key',
             'name': 'Name of Setting',
             'value': 'Value of Setting'
+        }
+        widgets = {
+            'key': forms.TextInput(attrs={'readonly': 'readonly'}),
+        }
+
+class EditTextForm(forms.ModelForm):
+    class Meta:
+        model = Text
+        fields = ['key', 'text', 'enabled']
+        labels = {
+            'key': 'Key',
+            'text': 'Text'
         }
         widgets = {
             'key': forms.TextInput(attrs={'readonly': 'readonly'}),
