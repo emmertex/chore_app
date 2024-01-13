@@ -113,8 +113,7 @@ def apply_daily_bonus(approver, child, incomplete_chores_sum, settings):
         points_balance = settings['min_points']
     points_balance += settings['daily_bonus']
     if points_balance > settings['max_points']:
-        pocket_money += (points_balance -
-                         settings['max_points'] * settings['point_value'])
+        pocket_money += ((points_balance - settings['max_points']) * settings['point_value'])
         points_balance = settings['max_points']
 
     models.User.objects.filter(pk=child.pk).update(
