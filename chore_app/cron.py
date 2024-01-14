@@ -1,6 +1,7 @@
 from django_cron import CronJobBase, Schedule
 from django.db.models import F, Q, Sum
 import chore_app.models as models
+import chore_app.views as views
 import datetime
 
 class NightlyAction(CronJobBase):
@@ -23,6 +24,8 @@ def nightly_action(approver=None):
     except Exception as e:
         print(e)
         return
+    
+    auto_approve(approver, settings)
         
 
     # Process each child's incomplete chores penalties and bonusses
@@ -138,9 +141,18 @@ def incomplete_chore_penalty(approver, child, settings):
 
     return 0
 
+# Automaticall approve pending claimed chores
+def auto_approve(approver, settings):
+    if settings['auto_approve'] < 0:
+        return
+    
+    chores = models.ChoreClaim.objects.filter(approved=0).select_related('chore')
+    penalty = 100 - settings['auto_approve']
+    
+    for chore in chores:
+        views.approve_chore_claim(None, chore.pk, penalty, auto=True)
+
 # Reset Daily Chores to Available, and clear claimed chores
-
-
 def reset_daily_chores():
     models.ChoreClaim.objects.filter(approved__gt=0).delete()
     models.ChoreClaim.objects.filter(

@@ -293,7 +293,7 @@ def return_chore(request, pk):
 
 
 @login_required
-def approve_chore_claim(request, pk, penalty):
+def approve_chore_claim(request, pk, penalty, auto=False):
     try:
         choreClaim = models.ChoreClaim.objects.get(pk=pk)
         models.PointLog.objects.create(user=choreClaim.user, points_change=(choreClaim.points - (choreClaim.points * (
@@ -307,8 +307,11 @@ def approve_chore_claim(request, pk, penalty):
         choreClaim.save()
     except:
         pass
-    return redirect('parent_profile')
-
+    
+    if not auto:
+        return redirect('parent_profile')
+    else:
+        return
 
 @login_required
 def reject_chore_claim(request, pk):

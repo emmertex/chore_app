@@ -72,6 +72,15 @@
         }
     },
     {
+        "model": "chore_app.Settings",
+        "pk": 9,
+        "fields": {
+            "key": "auto_approve",
+            "name": "Automatically approve pending chores (in percentage of points.  < 0 to disable)",
+            "value": 100
+        }
+    },
+    {
         "model": "chore_app.Text",
         "pk": 1,
         "fields": {
