@@ -3,23 +3,35 @@ from django_cron import CronJobBase, Schedule
 from django.db.models import F, Q, Sum
 import chore_app.models as models
 import chore_app.views as views
-import datetime
+from datetime import datetime
+
 
 class NightlyAction(CronJobBase):
-    # Scheduled to run nightly at 11:30 PM
     RUN_AT_TIMES = ['23:30']
     schedule = Schedule(run_at_times=RUN_AT_TIMES)
-    code = 'chore_app.cron.nightly_action' 
+    code = 'chore_app.cron.nightly_action'
+
+    def mark_as_run(self):
+        models.RunLog.objects.update_or_create(
+            job_code=self.code, defaults={'run_date': datetime.now().date()})
 
     def do(self):
-        try:
-            # Execute the nightly action task
-            nightly_action()
-            logging.info("Nightly job is running!")
-        except Exception as e:
-            # Log any exceptions that occur
-            logging.exception(f"Error occurred during the nightly action: {e}")
+        if not self.has_run_today(self.code):
+            try:
+                nightly_action(approver=self.approver)  # Pass the `approver` parameter
+                logging.debug("Nightly job is running!")  # Change logging level to debug
+                self.mark_as_run() 
+            except Exception as e:
+                logging.exception(f"Error occurred during the nightly action: {e}")
+        else:
+            logging.debug("Nightly job has already been run today; skipping execution.")
 
+def has_run_today(job_code):
+    last_run = models.RunLog.objects.filter(job_code=job_code).first()
+    if not last_run:
+        return False
+    current_date = datetime.now().date()
+    return last_run.run_date == current_date
 
 def nightly_action(approver=None):
 

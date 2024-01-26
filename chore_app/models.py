@@ -51,3 +51,7 @@ class Text(models.Model):
     key = models.CharField(max_length=255)
     text = models.TextField(default="")
     enabled = models.BooleanField(default=True)
+
+class RunLog(models.Model):
+    job_code = models.CharField(max_length=255)
+    run_date = models.DateField()

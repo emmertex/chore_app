@@ -9,7 +9,7 @@ from django.shortcuts import redirect, render
 
 import chore_app.forms as forms
 import chore_app.models as models
-from chore_app.cron import nightly_action
+from chore_app.cron import nightly_action, has_run_today
 
 UserModel = get_user_model()
 
@@ -115,6 +115,8 @@ def parent_profile(request):
         total_points=Sum('points_change')
     ).order_by('-total_points')
 
+    daily_task_ran = not has_run_today('chore_app.cron.nightly_action')
+
     context = {
         'available_chores': models.Chore.objects.filter(available=True),
         'unavailable_chores': models.Chore.objects.filter(available=False),
@@ -122,6 +124,7 @@ def parent_profile(request):
         'chore_points': chore_points,
         'point_logs': page_obj,
         'children': models.User.objects.filter(role='Child'),
+        'daily_task_ran': daily_task_ran
     }
     response = render(request, 'parent_profile.html', context)
     response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
