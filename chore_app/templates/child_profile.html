@@ -60,33 +60,12 @@
 
         <div class="block">
             <h2>
-                {% if chores %}
                 Available Chores
-                {% else %}
-                Leaderboard
-                {% endif %}
             </h2>
 
             {% if chores %}
             {% for chore in chores %}
             {% if chore not in claimed_chores %}
-            <div class="innerBlock" onclick="window.location.href='{% url 'claim_chore' chore.pk %}'">
-                <div class="buttonContainer">
-                    <div class="choreLeft">{{ chore.name }}
-                        <div class="small-text description">
-                            {{ chore.comment }}
-                        </div>
-                        <div class="small-text time">
-                            {% if chore.availableTime < 0 %}
-                            Available Before {{ chore.availableTime|abs_filter }}:00
-                            {% endif %}
-                        </div>
-                    </div>
-                    <div class="choreRight">{{ chore.points }} {% if chore.earlyBonus and bonus %} + {{ chore.points|halve }} {% endif %}</div>
-                </div>
-            </div>
-            {% endif %}
-            {% empty %}
             <div class="innerBlock" onclick="window.location.href='{% url 'claim_chore' chore.pk %}'">
                 <div class="buttonContainer">
                     <div class="choreLeft">{{ chore.name }}
@@ -105,12 +84,47 @@
                     <div class="choreRight">{{ chore.points }} {% if chore.earlyBonus and bonus %} + {{ chore.points|halve }} {% endif %}</div>
                 </div>
             </div>
+            {% endif %}
             {% endfor %}
-            {% else %}
-            {% for points in chore_points|slice:":3" %}
-            <div class="innerBlock v{{ forloop.counter0 }}">
-                {% if forloop.counter0 == 0 %}🏆{% elif forloop.counter0 == 1 %}🥈{% elif forloop.counter0 == 2 %}🥉{% endif %} {{ points.user__username }} with {{ points.total_points }} points.
+            {% endif %}
+            {% if future_chores %}
+            <h3>Future Chores</h3>
+            {% for chore in future_chores %}
+            <div class="innerBlock">
+                <div class="buttonContainer">
+                    <div class="choreLeft">{{ chore.name }}
+                        <div class="small-text description">
+                            {{ chore.comment }}
+                        </div>
+                        <div class="small-text time">
+                            Available After {{ chore.availableTime }}:00
+                        </div>
+                    </div>
+                    <div class="choreRight">{{ chore.points }} {% if chore.earlyBonus %} + {{ chore.points|halve }} {% endif %}</div>
+                </div>
             </div>
+            {% endfor %}
+            {% endif %}
+
+
+            {% if missed_chores %}
+            <h3>Missed Chores (Panalties will apply)</h3>
+            {% for chore in missed_chores %}
+            {% if chore not in claimed_chores %}
+            <div class="innerBlock">
+                <div class="buttonContainer">
+                    <div class="choreLeft">{{ chore.name }}
+                        <div class="small-text description">
+                            {{ chore.comment }}
+                        </div>
+                        <div class="small-text time">
+                            Was Available Before {{ chore.availableTime }}:00
+                        </div>
+                    </div>
+                    <div class="choreRight">-{{ chore.points }} {% if chore.earlyBonus %} + {{ chore.points|halve }} {% endif %}</div>
+                </div>
+            </div>
+            {% endif %}
             {% endfor %}
             {% endif %}
 
@@ -122,8 +136,10 @@
             {% for cchore in claimed_chores %}
             {% if cchore.approved == 0 %}
             <div class="innerBlock" onclick="window.location.href='{% url 'return_chore' cchore.pk %}'">
-            {% else %}
+            {% elif cchore.approved > 0 %}
             <div class="innerBlock approved">
+            {% else %}
+            <div class="innerBlock penalised">
             {% endif %}
                 <div class="buttonContainer">
                     <div class="choreLeft">{{ cchore.choreName }} 

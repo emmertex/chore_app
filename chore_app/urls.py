@@ -39,6 +39,7 @@ urlpatterns = [
     path('toggle_availability/<int:pk>/',
          views.toggle_availability, name='toggle_availability'),
     path('delete_chore/<int:pk>/', views.delete_chore, name='delete_chore'),
+    path('penalise_chore/<int:pk>/', views.penalise_chore, name='penalise_chore'),
 
     path('claim_chore/<int:pk>/', views.claim_chore, name='claim_chore'),
     path('return_chore/<int:pk>/', views.return_chore, name='return_chore'),

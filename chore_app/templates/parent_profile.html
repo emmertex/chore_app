@@ -98,6 +98,10 @@
                                 onclick="window.location.href='{% url 'toggle_availability' chore.pk %}'">Make
                                 Unavailable
                             </div>
+                            <div class="innerBlock"
+                                onclick="if(confirm('Are you sure you want to penalise this chore?')){ window.location.href='{% url 'penalise_chore' chore.pk %}'; }">
+                                Penalise Chore
+                            </div>
                             <div class="innerBlock red"
                                 onclick="if(confirm('Are you sure you want to delete this chore?')){ window.location.href='{% url 'delete_chore' chore.pk %}'; }">
                                 Delete Chore

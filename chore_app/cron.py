@@ -158,19 +158,21 @@ def incomplete_chore_penalty(approver, child, settings):
                 incomplete_chores_sum += chore.points
 
         penalty_multiplier = settings['incomplete_chores_penalty'] / 100
+        penalty = (1 - completed_by_child_sum / complete_chores_sum) * penalty_multiplier * 100
 
-        incomplete_chores_penalty = penalty_multiplier * (incomplete_chores_sum + penalised_chores_sum) * (1 - completed_by_child_sum / complete_chores_sum)
+        incomplete_chores_penalty = penalty_multiplier * incomplete_chores_sum * (1 - completed_by_child_sum / complete_chores_sum)
 
         models.PointLog.objects.create(
             user=child, 
-            points_change=incomplete_chores_penalty, 
-            penalty=settings['incomplete_chores_penalty'],
+            points_change=-(incomplete_chores_penalty + penalised_chores_sum), 
+            penalty=penalty,
             reason='Incomplete Chores Penalty',
             chore='', 
             approver=approver
         )
 
         updated_points = child.points_balance - incomplete_chores_penalty
+        updated_points -= penalised_chores_sum
         models.User.objects.filter(pk=child.pk).update(points_balance=updated_points)
         
     return

@@ -163,6 +163,16 @@ def child_profile(request):
          Q(availableTime__lt=0, availableTime__gt=-current_time.hour)) &
         ~Q(availableTime__exact=0)
     )
+    future_chores = chores.exclude(
+        name__in=claimed_chores.values_list('choreName', flat=True)
+    ).filter(
+        (Q(availableTime__gte=0, availableTime__gt=current_time.hour))
+    )
+    missed_chores = chores.exclude(
+        name__in=claimed_chores.values_list('choreName', flat=True)
+    ).filter(
+        (Q(availableTime__lt=0, availableTime__gt=-current_time.hour))
+    )
 
     settings = {setting.key: setting.value for setting in models.Settings.objects.all()}
 
@@ -176,6 +186,8 @@ def child_profile(request):
         'chore_points': chore_points,
         'point_logs': page_obj,  # Use the paginated page_obj instead of the original queryset
         'claimed_chores': claimed_chores,
+        'future_chores': future_chores,
+        'missed_chores': missed_chores,
         'max_points': settings['max_points'],
         'min_points': settings['min_points'],
         'leaderboard_awards': settings['leaderboard_awards'],
@@ -247,6 +259,20 @@ def delete_chore(request, pk):
     try:
         chore = models.Chore.objects.get(pk=pk)
         chore.delete()
+    except:
+        pass
+    return redirect('parent_profile')
+
+@login_required
+def penalise_chore(request, pk):
+    try:
+        chore = models.Chore.objects.get(pk=pk)
+        chore.available = False
+        chore.save()
+        for child in models.User.objects.filter(role='Child'):
+            models.ChoreClaim.objects.create(
+                chore=chore, user=child, choreName=chore.name, points=(-chore.points), comment='Penalty: '
+            )
     except:
         pass
     return redirect('parent_profile')

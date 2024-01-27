@@ -270,6 +270,13 @@ code {
     background-size: 200% auto;
 }
 
+.innerBlock.penalised {
+    overflow: hidden;
+    animation: flashLine 2s infinite;
+    background: linear-gradient(70deg, transparent, rgb(255, 0, 0) 40px, transparent, transparent);
+    background-size: 200% auto;
+}
+
 @keyframes flashLine {
     0% {
         background-position: -100% 0;
