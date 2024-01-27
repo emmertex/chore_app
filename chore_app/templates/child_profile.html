@@ -147,8 +147,8 @@
                     </div>
                     {% if cchore.approved > 0 %}
                     <div class="choreRightClaimed">Approved for {{ cchore.approved }}</div>
-                    {% else %}
-                    <div class="choreRightClaimed">{{ cchore.points }}</div>
+                    {% elif cchore.approved < 0 %}
+                    <div class="choreRightClaimed penalised">Penalty of {{ cchore.points }}</div>
                     {% endif %}
                 </div>
             </div>
