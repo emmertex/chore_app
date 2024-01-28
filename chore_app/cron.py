@@ -7,6 +7,11 @@ from datetime import datetime
 
 
 class NightlyAction(CronJobBase):
+    logging.basicConfig(
+        level=logging.WARNING,
+        format='%(asctime)s %(levelname)s %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S',
+        )
     RUN_AT_TIMES = ['23:30']
     schedule = Schedule(run_at_times=RUN_AT_TIMES)
     code = 'chore_app.cron.nightly_action'
@@ -156,6 +161,9 @@ def incomplete_chore_penalty(approver, child, settings):
         for chore in available_chores:
             if chore.id not in completed_by_child_ids:
                 incomplete_chores_sum += chore.points
+
+        if complete_chores_sum == 0:
+            complete_chores_sum = completed_by_child_sum
 
         penalty_multiplier = settings['incomplete_chores_penalty'] / 100
         penalty = (1 - completed_by_child_sum / complete_chores_sum) * penalty_multiplier * 100

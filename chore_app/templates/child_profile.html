@@ -121,7 +121,7 @@
                             Was Available Before {{ chore.availableTime }}:00
                         </div>
                     </div>
-                    <div class="choreRight">-{{ chore.points }} {% if chore.earlyBonus %} + {{ chore.points|halve }} {% endif %}</div>
+                    <div class="choreRight">-{{ chore.points }}</div>
                 </div>
             </div>
             {% endif %}
@@ -136,9 +136,11 @@
             {% for cchore in claimed_chores %}
             {% if cchore.approved == 0 %}
             <div class="innerBlock" onclick="window.location.href='{% url 'return_chore' cchore.pk %}'">
-            {% elif cchore.approved > 0 %}
+            {% endif %}
+            {% if cchore.approved > 0 %}
             <div class="innerBlock approved">
-            {% else %}
+            {% endif %}
+            {% if cchore.approved < 0 %}
             <div class="innerBlock penalised">
             {% endif %}
                 <div class="buttonContainer">
@@ -147,7 +149,8 @@
                     </div>
                     {% if cchore.approved > 0 %}
                     <div class="choreRightClaimed">Approved for {{ cchore.approved }}</div>
-                    {% elif cchore.approved < 0 %}
+                    {% endif %}
+                    {% if cchore.approved < 0 %}
                     <div class="choreRightClaimed penalised">Penalty of {{ cchore.points }}</div>
                     {% endif %}
                 </div>

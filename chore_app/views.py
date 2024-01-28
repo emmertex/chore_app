@@ -271,7 +271,7 @@ def penalise_chore(request, pk):
         chore.save()
         for child in models.User.objects.filter(role='Child'):
             models.ChoreClaim.objects.create(
-                chore=chore, user=child, choreName=chore.name, points=(-chore.points), comment='Penalty: '
+                chore=chore, user=child, choreName=chore.name, points=(-chore.points), approved=(-chore.points), comment='Penalty for incomplete chore'
             )
     except:
         pass
