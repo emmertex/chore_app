@@ -35,8 +35,11 @@
                                         {{ chore_claim.comment }}
                                     </div>
                                 </div>
-                            
-                                <div class="choreRight">{{ chore_claim.points }}</div>
+                                {% if chore_claim.multiplier_type %}
+                                    <div class="choreRight">{{ chore_claim.points | div_ten }} x</div>
+                                {% else %}
+                                    <div class="choreRight">{{ chore_claim.points }} ++</div>
+                                {% endif %}
                             </div>
                         </div>
                     
@@ -84,8 +87,13 @@
                                 {% endif %}
                             </div>
                         </div>
-                        <div class="choreRight">{{ chore.points }} {% if chore.earlyBonus %} ++ {% endif %}
-                        </div>
+                        {% if chore.multiplier_type %}
+                            <div class="choreRight">{{ chore.points | div_ten }} x</div>
+                        {% else %}
+                            <div class="choreRight">{{ chore.points }} {% if chore.earlyBonus %} ++ {% endif %}</div>
+                        {% endif %}
+                        
+                        
                     </div>
                 </div>
                 <div class="innerBlock edit" id="chore-available-modal-{{ chore.pk }}">✏️
@@ -132,8 +140,11 @@
                                 {% endif %}
                             </div>
                         </div>
-                        <div class="choreRight">{{ chore.points }} {% if chore.earlyBonus %} ++ {% endif %}
-                        </div>
+                        {% if chore.multiplier_type %}
+                            <div class="choreRight">{{ chore.points | div_ten }} x</div>
+                        {% else %}
+                            <div class="choreRight">{{ chore.points }} {% if chore.earlyBonus %} ++ {% endif %}</div>
+                        {% endif %}
                     </div>
                 </div>
                 <div class="innerBlock edit" id="chore-unavailable-modal-{{ chore.pk }}">✏️

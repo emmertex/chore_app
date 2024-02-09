@@ -81,7 +81,11 @@
                             {% endif %}
                         </div>
                     </div>
+                    {% if chore.multiplier_type %}
+                        <div class="choreRight">{{ chore.points | div_ten }} x</div>
+                    {% else %}
                     <div class="choreRight">{{ chore.points }} {% if chore.earlyBonus and bonus %} + {{ chore.points|halve }} {% endif %}</div>
+                    {% endif %}
                 </div>
             </div>
             {% endif %}
@@ -100,7 +104,11 @@
                             Available After {{ chore.availableTime }}:00
                         </div>
                     </div>
-                    <div class="choreRight">{{ chore.points }} {% if chore.earlyBonus %} + {{ chore.points|halve }} {% endif %}</div>
+                    {% if chore.multiplier_type %}
+                        <div class="choreRight">{{ chore.points | div_ten }} x</div>
+                    {% else %}
+                    <div class="choreRight">{{ chore.points }} {% if chore.earlyBonus and bonus %} + {{ chore.points|halve }} {% endif %}</div>
+                    {% endif %}
                 </div>
             </div>
             {% endfor %}
@@ -148,7 +156,14 @@
                         <div class="small-text description">{{ cchore.comment }}</div>
                     </div>
                     {% if cchore.approved > 0 %}
-                    <div class="choreRightClaimed">Approved for {{ cchore.approved }}</div>
+
+                    {% if cchore.multiplier_type %}
+                        <div class="choreRight"> Approved Multiplier of {{ cchore.points | div_ten }} x</div>
+                    {% else %}
+                        <div class="choreRightClaimed">Approved for {{ cchore.approved }}</div>
+                    {% endif %}
+
+                    
                     {% endif %}
                     {% if cchore.approved < 0 %}
                     <div class="choreRightClaimed penalised">Penalty of {{ cchore.points }}</div>

@@ -81,8 +81,29 @@ def nightly_action(approver=None):
 def apply_leaderboard_scoring(approver, children, settings):
 
     # Sum all the points each child earned from chores today
-    chore_points = models.PointLog.objects.filter(date_recorded__date=datetime.now().date()).exclude(
-        chore='').values('user', 'user__username').annotate(total_points=Sum('points_change')).order_by('-total_points')
+    chore_points_mult = models.PointLog.objects.filter(
+        date_recorded__date=datetime.now().date()
+    ).exclude(
+        chore=''
+    ).exclude(
+        multiplier_type=False
+    ).values(
+        'user', 'user__username'
+    ).annotate(
+        total_points=Sum('points_change') / 10
+    ).order_by('-total_points')
+
+    chore_points = models.PointLog.objects.filter(
+        date_recorded__date=datetime.now().date()
+    ).exclude(
+        chore=''
+    ).exclude(
+        multiplier_type=True
+    ).values(
+        'user', 'user__username'
+    ).annotate(
+        total_points=Sum('points_change') * chore_points_mult.filter(user=F('user')).values('total_points')
+    ).order_by('-total_points')
 
     # Create text for the Leaderboard
     leaderboard_text = ""
@@ -96,27 +117,30 @@ def apply_leaderboard_scoring(approver, children, settings):
     # Apply the medals and points
     if len(chore_points) > 0:
         children.filter(pk=chore_points[0]['user']).update(
-            place_1=F('place_1') + 1)
+            place_1=F('place_1') + 1, points_balance=F('points_balance') + chore_points.filter(user=F('user')).values('total_points')[0]['total_points'])
         children.filter(pk=chore_points[0]['user']).update(
             points_balance=F('points_balance') + settings['leaderboard_awards'])
         models.PointLog.objects.create(user=models.User.objects.get(
             pk=chore_points[0]['user']), points_change=settings['leaderboard_awards'], reason=leaderboard_text, approver=approver)
     if len(chore_points) > 1:
         children.filter(pk=chore_points[1]['user']).update(
-            place_2=F('place_2') + 1)
+            place_2=F('place_2') + 1, points_balance=F('points_balance') + chore_points.filter(user=F('user')).values('total_points')[0]['total_points'])
         children.filter(pk=chore_points[1]['user']).update(
             points_balance=F('points_balance') + (settings['leaderboard_awards'] / 2))
         models.PointLog.objects.create(user=models.User.objects.get(
             pk=chore_points[1]['user']), points_change=settings['leaderboard_awards'] / 2, reason=leaderboard_text, approver=approver)
     if len(chore_points) > 2:
         children.filter(pk=chore_points[2]['user']).update(
-            place_3=F('place_3') + 1)
+            place_3=F('place_3') + 1, points_balance=F('points_balance') + chore_points.filter(user=F('user')).values('total_points')[0]['total_points'])
         children.filter(pk=chore_points[2]['user']).update(
             points_balance=F('points_balance') + (settings['leaderboard_awards'] / 5))
         models.PointLog.objects.create(user=models.User.objects.get(
             pk=chore_points[2]['user']), points_change=settings['leaderboard_awards'] / 5, reason=leaderboard_text, approver=approver)
     if len(chore_points) > 3:
         for i in range(3, len(chore_points)):
+            children.filter(pk=chore_points[i]['user']).update(
+                points_balance=F('points_balance') + chore_points.filter(user=F('user')).values('total_points')[0]['total_points']
+            )
             models.PointLog.objects.create(user=models.User.objects.get(
                 pk=chore_points[i]['user']), points_change=0, reason=leaderboard_text, approver=approver)
     return

@@ -6,12 +6,13 @@ from chore_app.models import Chore, ChoreClaim, PointLog, Settings, User, Text
 class ChoreForm(forms.ModelForm):
     class Meta:
         model = Chore
-        fields = ['name', 'comment', 'points', 'available',
+        fields = ['name', 'comment', 'points', 'multiplier_type', 'available',
                   'daily', 'persistent', 'earlyBonus', 'availableTime']
         labels = {
             'name': 'Chore Name',
             'comment': 'Details of Chore',
             'points': 'Points',
+            'multiplier_type': 'Points Multiplier',
             'available': 'Is Available',
             'daily': 'Automatically Available Daily',
             'persistent': 'Available for All Children',
@@ -27,12 +28,13 @@ class ChoreForm(forms.ModelForm):
 class EditChoreForm(forms.ModelForm):
     class Meta:
         model = Chore
-        fields = ['name', 'comment', 'points', 'available',
+        fields = ['name', 'comment', 'points', 'multiplier_type', 'available',
                   'daily', 'persistent', 'earlyBonus', 'availableTime']
         labels = {
             'name': 'Chore Name',
             'comment': 'Details of Chore',
             'points': 'Points',
+            'multiplier_type': 'Points Multiplier',
             'available': 'Is Available',
             'daily': 'Automatically Available Daily',
             'persistent': 'Available for All Children',

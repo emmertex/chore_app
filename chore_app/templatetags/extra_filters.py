@@ -23,3 +23,10 @@ def abs_filter(value):
         return str(int(abs(value)))
     except (ValueError, TypeError):
         return str(int(value))
+
+@register.filter(name='div_ten')
+def abs_filter(value):
+    try:
+        return str(float(value / 10))
+    except (ValueError, TypeError):
+        return str(int(value))

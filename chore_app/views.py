@@ -105,14 +105,28 @@ def parent_profile(request):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
+    chore_points_mult = models.PointLog.objects.filter(
+        date_recorded__date=datetime.date.today()
+    ).exclude(
+        chore=''
+    ).exclude(
+        multiplier_type=False
+    ).values(
+        'user', 'user__username'
+    ).annotate(
+        total_points=Sum('points_change') / 10
+    ).order_by('-total_points')
+
     chore_points = models.PointLog.objects.filter(
         date_recorded__date=datetime.date.today()
     ).exclude(
         chore=''
+    ).exclude(
+        multiplier_type=True
     ).values(
         'user', 'user__username'
     ).annotate(
-        total_points=Sum('points_change')
+        total_points=Sum('points_change') * chore_points_mult.filter(user=F('user')).values('total_points')
     ).order_by('-total_points')
 
     daily_task_ran = not has_run_today('chore_app.cron.nightly_action')
@@ -143,14 +157,28 @@ def child_profile(request):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
+    chore_points_mult = models.PointLog.objects.filter(
+        date_recorded__date=datetime.date.today()
+    ).exclude(
+        chore=''
+    ).exclude(
+        multiplier_type=False
+    ).values(
+        'user', 'user__username'
+    ).annotate(
+        total_points=Sum('points_change') / 10
+    ).order_by('-total_points')
+
     chore_points = models.PointLog.objects.filter(
         date_recorded__date=datetime.date.today()
     ).exclude(
         chore=''
+    ).exclude(
+        multiplier_type=True
     ).values(
         'user', 'user__username'
     ).annotate(
-        total_points=Sum('points_change')
+        total_points=Sum('points_change') * chore_points_mult.filter(user=F('user')).values('total_points')
     ).order_by('-total_points')
 
     chores = models.Chore.objects.filter(available=True)
@@ -176,12 +204,19 @@ def child_profile(request):
 
     settings = {setting.key: setting.value for setting in models.Settings.objects.all()}
 
+    points = request.user.points_balance
+    try:
+        points += chore_points.filter(user=request.user).values('total_points').first()[
+            'total_points']
+    except:
+        pass    
+
     context = {
         'minimum_points': models.Settings.objects.get(key='max_points').value / 2,
         'pocket_money': request.user.pocket_money / 100,
         'pocket_money_amount': models.Settings.objects.get(key='point_value').value,
         'bonus': bonus,
-        'points': request.user.points_balance,
+        'points': points,
         'chores': filtered_chores,
         'chore_points': chore_points,
         'point_logs': page_obj,  # Use the paginated page_obj instead of the original queryset
@@ -295,7 +330,7 @@ def claim_chore(request, pk):
                 addPoints = chore.points
                 comment = chore.comment
             models.ChoreClaim.objects.create(
-                chore=chore, user=request.user, choreName=chore.name, points=addPoints, comment=comment)
+                chore=chore, user=request.user, choreName=chore.name, points=addPoints, multiplier_type=chore.multiplier_type ,comment=comment)
             if not chore.persistent:
                 chore.available = False
                 chore.save()
@@ -326,10 +361,8 @@ def approve_chore_claim(request, pk, penalty, auto=False):
     try:
         choreClaim = models.ChoreClaim.objects.get(pk=pk)
         models.PointLog.objects.create(user=choreClaim.user, points_change=(choreClaim.points - (choreClaim.points * (
-            penalty / 100))), penalty=penalty, reason='Approved', chore=choreClaim.choreName, approver=request.user)
+            penalty / 100))), penalty=penalty, multiplier_type=choreClaim.multiplier_type, reason='Approved', chore=choreClaim.choreName, approver=request.user)
         user = models.User.objects.get(pk=choreClaim.user.pk)
-        user.points_balance += (choreClaim.points -
-                                (choreClaim.points * (penalty / 100)))
         user.save()
         choreClaim.approved = (choreClaim.points -
                                (choreClaim.points * (penalty / 100)))
