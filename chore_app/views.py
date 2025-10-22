@@ -115,7 +115,7 @@ def parent_profile(request):
         total_points=Sum('points_change')
     ).order_by('-total_points')
 
-    daily_task_ran = not has_run_today('chore_app.cron.nightly_action')
+    daily_task_can_run = not has_run_today('chore_app.cron.nightly_action')
 
     context = {
         'available_chores': models.Chore.objects.filter(available=True),
@@ -124,7 +124,7 @@ def parent_profile(request):
         'chore_points': chore_points,
         'point_logs': page_obj,
         'children': models.User.objects.filter(role='Child'),
-        'daily_task_ran': daily_task_ran
+        'daily_task_can_run': daily_task_can_run
     }
     response = render(request, 'parent_profile.html', context)
     response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
@@ -466,5 +466,20 @@ def child_chore(request):
 
 @login_required
 def daily_action(request):
-    nightly_action(approver=request.user)
+    # Check if the daily task has already been run today
+    if has_run_today('chore_app.cron.nightly_action'):
+        # If it has already run, redirect back to parent profile with an error message
+        return redirect('parent_profile')
+    
+    # Only allow parents to run the daily action
+    if request.user.role != 'Parent':
+        return redirect('child_profile')
+    
+    try:
+        nightly_action(approver=request.user)
+    except Exception as e:
+        # Log the error and redirect back to parent profile
+        # You might want to add proper error handling/logging here
+        pass
+    
     return redirect('parent_profile')

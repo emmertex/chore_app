@@ -162,7 +162,7 @@
 
         <div class="block">
             <h3>Actions</h3>
-            {% if daily_task_ran %}
+            {% if daily_task_can_run %}
             <div class="innerBlock"
                 onclick="if (confirm('Are you sure you want to perform this action?')) { window.location.href='{% url 'daily_action' %}' }">
                 Daily Action<br><span style="font-size: smaller;">Can only be ran once per day.</span>

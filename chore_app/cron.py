@@ -162,26 +162,44 @@ def incomplete_chore_penalty(approver, child, settings):
             if chore.id not in completed_by_child_ids:
                 incomplete_chores_sum += chore.points
 
+        # Fix division by zero: if no chores have been completed, skip penalty calculation
         if complete_chores_sum == 0:
-            complete_chores_sum = completed_by_child_sum
+            # If no chores have been completed at all, there's no basis for penalty calculation
+            # Just apply penalty for incomplete chores without the completion ratio
+            penalty_multiplier = settings['incomplete_chores_penalty'] / 100
+            incomplete_chores_penalty = penalty_multiplier * incomplete_chores_sum
+            penalty = 100  # 100% penalty since no chores were completed
+            
+            models.PointLog.objects.create(
+                user=child, 
+                points_change=-(incomplete_chores_penalty + penalised_chores_sum), 
+                penalty=penalty,
+                reason='Incomplete Chores Penalty (No chores completed)',
+                chore='', 
+                approver=approver
+            )
 
-        penalty_multiplier = settings['incomplete_chores_penalty'] / 100
-        penalty = (1 - completed_by_child_sum / complete_chores_sum) * penalty_multiplier * 100
+            updated_points = child.points_balance - incomplete_chores_penalty
+            updated_points -= penalised_chores_sum
+            models.User.objects.filter(pk=child.pk).update(points_balance=updated_points)
+        else:
+            penalty_multiplier = settings['incomplete_chores_penalty'] / 100
+            penalty = (1 - completed_by_child_sum / complete_chores_sum) * penalty_multiplier * 100
 
-        incomplete_chores_penalty = penalty_multiplier * incomplete_chores_sum * (1 - completed_by_child_sum / complete_chores_sum)
+            incomplete_chores_penalty = penalty_multiplier * incomplete_chores_sum * (1 - completed_by_child_sum / complete_chores_sum)
 
-        models.PointLog.objects.create(
-            user=child, 
-            points_change=-(incomplete_chores_penalty + penalised_chores_sum), 
-            penalty=penalty,
-            reason='Incomplete Chores Penalty',
-            chore='', 
-            approver=approver
-        )
+            models.PointLog.objects.create(
+                user=child, 
+                points_change=-(incomplete_chores_penalty + penalised_chores_sum), 
+                penalty=penalty,
+                reason='Incomplete Chores Penalty',
+                chore='', 
+                approver=approver
+            )
 
-        updated_points = child.points_balance - incomplete_chores_penalty
-        updated_points -= penalised_chores_sum
-        models.User.objects.filter(pk=child.pk).update(points_balance=updated_points)
+            updated_points = child.points_balance - incomplete_chores_penalty
+            updated_points -= penalised_chores_sum
+            models.User.objects.filter(pk=child.pk).update(points_balance=updated_points)
         
     return
 
