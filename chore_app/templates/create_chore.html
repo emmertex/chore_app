@@ -5,6 +5,24 @@
     {% load static %}
     <link rel="stylesheet" href="{% static 'styles.css' %}" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      function toggleChildSelection() {
+        const assignmentType = document.getElementById('id_assignment_type').value;
+        const childSelection = document.getElementById('child-selection');
+        
+        if (assignmentType === 'any_selected' || assignmentType === 'all_selected') {
+          childSelection.style.display = 'block';
+        } else {
+          childSelection.style.display = 'none';
+        }
+      }
+      
+      // Initialize on page load
+      document.addEventListener('DOMContentLoaded', function() {
+        toggleChildSelection();
+        document.getElementById('id_assignment_type').addEventListener('change', toggleChildSelection);
+      });
+    </script>
   </head>
 
   <body>
@@ -15,7 +33,64 @@
           <form method="post">
             {% csrf_token %}
             <div class="form-fields">
-              {{ form.as_p }}
+              <p>
+                <label for="{{ form.name.id_for_label }}">{{ form.name.label }}:</label>
+                {{ form.name }}
+              </p>
+              
+              <p>
+                <label for="{{ form.comment.id_for_label }}">{{ form.comment.label }}:</label>
+                {{ form.comment }}
+              </p>
+              
+              <p>
+                <label for="{{ form.points.id_for_label }}">{{ form.points.label }}:</label>
+                {{ form.points }}
+              </p>
+              
+              <p>
+                <label for="{{ form.available.id_for_label }}">{{ form.available.label }}:</label>
+                {{ form.available }}
+              </p>
+              
+              <p>
+                <label for="{{ form.daily.id_for_label }}">{{ form.daily.label }}:</label>
+                {{ form.daily }}
+              </p>
+              
+              <p>
+                <label for="{{ form.assignment_type.id_for_label }}">{{ form.assignment_type.label }}:</label>
+                {{ form.assignment_type }}
+              </p>
+              
+              <div id="child-selection" style="display: none;">
+                <p>
+                  <label for="{{ form.assigned_children.id_for_label }}">{{ form.assigned_children.label }}:</label>
+                </p>
+                <div style="margin-left: 20px;">
+                  {% for child in children %}
+                    <label>
+                      <input type="checkbox" name="assigned_children" value="{{ child.id }}">
+                      {{ child.username }}
+                    </label><br>
+                  {% endfor %}
+                </div>
+              </div>
+              
+              <p>
+                <label for="{{ form.earlyBonus.id_for_label }}">{{ form.earlyBonus.label }}:</label>
+                {{ form.earlyBonus }}
+              </p>
+              
+              <p>
+                <label for="{{ form.bonus_end_time.id_for_label }}">{{ form.bonus_end_time.label }}:</label>
+                {{ form.bonus_end_time }}
+              </p>
+              
+              <p>
+                <label for="{{ form.availableTime.id_for_label }}">{{ form.availableTime.label }}:</label>
+                {{ form.availableTime }}
+              </p>
             </div>
             <div class="form-actions">
               <button type="submit">Create Chore</button>

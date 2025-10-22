@@ -134,8 +134,6 @@ def parent_profile(request):
 @login_required
 def child_profile(request):
     current_time = datetime.datetime.now().time()
-    bonus = current_time <= datetime.time(models.Settings.objects.get(
-        key='bonus_end_time').value) and current_time > datetime.time(5)
 
     point_logs = models.PointLog.objects.filter(
         user=request.user).order_by('-date_recorded')
@@ -156,19 +154,38 @@ def child_profile(request):
     chores = models.Chore.objects.filter(available=True)
     claimed_chores = models.ChoreClaim.objects.filter(
         user=request.user).select_related('chore')
-    filtered_chores = chores.exclude(
+    
+    # Filter chores based on assignment type and user eligibility
+    eligible_chores = []
+    for chore in chores:
+        can_see = False
+        if chore.assignment_type == 'any_child':
+            can_see = True
+        elif chore.assignment_type == 'all_children':
+            can_see = True
+        elif chore.assignment_type == 'any_selected':
+            can_see = chore.assigned_children.filter(id=request.user.id).exists()
+        elif chore.assignment_type == 'all_selected':
+            can_see = chore.assigned_children.filter(id=request.user.id).exists()
+        
+        if can_see:
+            eligible_chores.append(chore.id)
+    
+    eligible_chores_qs = chores.filter(id__in=eligible_chores)
+    
+    filtered_chores = eligible_chores_qs.exclude(
         name__in=claimed_chores.values_list('choreName', flat=True)
     ).exclude(
         (Q(availableTime__gte=0, availableTime__gt=current_time.hour) |
          Q(availableTime__lt=0, availableTime__gt=-current_time.hour)) &
         ~Q(availableTime__exact=0)
     )
-    future_chores = chores.exclude(
+    future_chores = eligible_chores_qs.exclude(
         name__in=claimed_chores.values_list('choreName', flat=True)
     ).filter(
         (Q(availableTime__gte=0, availableTime__gt=current_time.hour))
     )
-    missed_chores = chores.exclude(
+    missed_chores = eligible_chores_qs.exclude(
         name__in=claimed_chores.values_list('choreName', flat=True)
     ).filter(
         (Q(availableTime__lt=0, availableTime__gt=-current_time.hour))
@@ -180,7 +197,6 @@ def child_profile(request):
         'minimum_points': models.Settings.objects.get(key='max_points').value / 2,
         'pocket_money': request.user.pocket_money / 100,
         'pocket_money_amount': models.Settings.objects.get(key='point_value').value,
-        'bonus': bonus,
         'points': request.user.points_balance,
         'chores': filtered_chores,
         'chore_points': chore_points,
@@ -208,7 +224,9 @@ def create_chore(request):
             return redirect('parent_profile')
     else:
         form = forms.ChoreForm()
-    return render(request, 'create_chore.html', {'form': form})
+    
+    children = models.User.objects.filter(role='Child')
+    return render(request, 'create_chore.html', {'form': form, 'children': children})
 
 
 @login_required
@@ -222,7 +240,9 @@ def edit_chore(request, pk):
                 return redirect('parent_profile')
         else:
             form = forms.EditChoreForm(instance=chore)
-        return render(request, 'edit_chore.html', {'form': form, 'chore': chore})
+        
+        children = models.User.objects.filter(role='Child')
+        return render(request, 'edit_chore.html', {'form': form, 'chore': chore, 'children': children})
     except:
         return redirect('parent_profile')
 
@@ -284,21 +304,58 @@ def claim_chore(request, pk):
         current_time = datetime.datetime.now().time()
         chore = models.Chore.objects.get(pk=pk)
         if chore.available:
-            if current_time <= datetime.time(models.Settings.objects.get(key='bonus_end_time').value) \
-                    and current_time > datetime.time(5) \
-                    and chore.earlyBonus:
-                addPoints = chore.points * \
-                    ((models.Settings.objects.get(key='bonus_percent').value + 100) / 100)
-                comment = 'Early Bonus of ' + \
-                    str(chore.earlyBonus) + ' points: ' + chore.comment
-            else:
-                addPoints = chore.points
-                comment = chore.comment
-            models.ChoreClaim.objects.create(
-                chore=chore, user=request.user, choreName=chore.name, points=addPoints, comment=comment)
-            if not chore.persistent:
-                chore.available = False
-                chore.save()
+            # Check if user is allowed to claim this chore based on assignment type
+            can_claim = False
+            if chore.assignment_type == 'any_child':
+                can_claim = True
+            elif chore.assignment_type == 'all_children':
+                can_claim = True
+            elif chore.assignment_type == 'any_selected':
+                can_claim = chore.assigned_children.filter(id=request.user.id).exists()
+            elif chore.assignment_type == 'all_selected':
+                can_claim = chore.assigned_children.filter(id=request.user.id).exists()
+            
+            if can_claim:
+                if current_time <= datetime.time(chore.bonus_end_time) \
+                        and current_time > datetime.time(5) \
+                        and chore.earlyBonus:
+                    addPoints = chore.points * \
+                        ((models.Settings.objects.get(key='bonus_percent').value + 100) / 100)
+                    comment = 'Early Bonus of ' + \
+                        str(chore.earlyBonus) + ' points: ' + chore.comment
+                else:
+                    addPoints = chore.points
+                    comment = chore.comment
+                models.ChoreClaim.objects.create(
+                    chore=chore, user=request.user, choreName=chore.name, points=addPoints, comment=comment)
+                
+                # Determine if chore should remain available after being claimed
+                if chore.assignment_type == 'any_child':
+                    chore.available = False
+                    chore.save()
+                elif chore.assignment_type == 'all_children':
+                    # Keep available for all children
+                    pass
+                elif chore.assignment_type == 'any_selected':
+                    # Check if all selected children have claimed it
+                    selected_children = chore.assigned_children.all()
+                    claimed_by_selected = models.ChoreClaim.objects.filter(
+                        chore=chore, 
+                        user__in=selected_children
+                    ).values_list('user', flat=True).distinct()
+                    if set(claimed_by_selected) == set(selected_children.values_list('id', flat=True)):
+                        chore.available = False
+                        chore.save()
+                elif chore.assignment_type == 'all_selected':
+                    # Check if all selected children have claimed it
+                    selected_children = chore.assigned_children.all()
+                    claimed_by_selected = models.ChoreClaim.objects.filter(
+                        chore=chore, 
+                        user__in=selected_children
+                    ).values_list('user', flat=True).distinct()
+                    if set(claimed_by_selected) == set(selected_children.values_list('id', flat=True)):
+                        chore.available = False
+                        chore.save()
     except:
         pass
     return redirect('child_profile')

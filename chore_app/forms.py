@@ -7,20 +7,24 @@ class ChoreForm(forms.ModelForm):
     class Meta:
         model = Chore
         fields = ['name', 'comment', 'points', 'available',
-                  'daily', 'persistent', 'earlyBonus', 'availableTime']
+                  'daily', 'assignment_type', 'assigned_children', 'earlyBonus', 'bonus_end_time', 'availableTime']
         labels = {
             'name': 'Chore Name',
             'comment': 'Details of Chore',
             'points': 'Points',
             'available': 'Is Available',
             'daily': 'Automatically Available Daily',
-            'persistent': 'Available for All Children',
+            'assignment_type': 'Assignment Type',
+            'assigned_children': 'Select Children (for "Any of Selected" or "All of Selected")',
             'earlyBonus': 'Early Bonus Points if done early',
+            'bonus_end_time': 'Bonus Points Before (hour, 0-23)',
             'availableTime': 'Time in which chore is available (+13 means after 1pm, -13 means before 1pm)'
         }
         widgets = {
             'comment': forms.Textarea(attrs={'rows': 2, 'placeholder': 'Optional'}),
-            'availableTime': forms.NumberInput(attrs={'type': 'number', 'step': 'any'})
+            'availableTime': forms.NumberInput(attrs={'type': 'number', 'step': 'any'}),
+            'bonus_end_time': forms.NumberInput(attrs={'type': 'number', 'min': '0', 'max': '23'}),
+            'assigned_children': forms.CheckboxSelectMultiple()
         }
 
 
@@ -28,20 +32,24 @@ class EditChoreForm(forms.ModelForm):
     class Meta:
         model = Chore
         fields = ['name', 'comment', 'points', 'available',
-                  'daily', 'persistent', 'earlyBonus', 'availableTime']
+                  'daily', 'assignment_type', 'assigned_children', 'earlyBonus', 'bonus_end_time', 'availableTime']
         labels = {
             'name': 'Chore Name',
             'comment': 'Details of Chore',
             'points': 'Points',
             'available': 'Is Available',
             'daily': 'Automatically Available Daily',
-            'persistent': 'Available for All Children',
+            'assignment_type': 'Assignment Type',
+            'assigned_children': 'Select Children (for "Any of Selected" or "All of Selected")',
             'earlyBonus': 'Early Bonus Points if done early',
+            'bonus_end_time': 'Bonus Points Before (hour, 0-23)',
             'availableTime': 'Time in which chore is available (+ for after, - for before, 0 for always available)'
         }
         widgets = {
             'comment': forms.Textarea(attrs={'rows': 2, 'placeholder': 'Optional'}),
-            'availableTime': forms.NumberInput(attrs={'type': 'number', 'step': 'any'})
+            'availableTime': forms.NumberInput(attrs={'type': 'number', 'step': 'any'}),
+            'bonus_end_time': forms.NumberInput(attrs={'type': 'number', 'min': '0', 'max': '23'}),
+            'assigned_children': forms.CheckboxSelectMultiple()
         }
 
 

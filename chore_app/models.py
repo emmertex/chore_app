@@ -13,14 +13,23 @@ class User(AbstractUser):
 
 
 class Chore(models.Model):
+    ASSIGNMENT_CHOICES = [
+        ('any_child', 'Any Child'),
+        ('all_children', 'All Children'),
+        ('any_selected', 'Any of Selected Children'),
+        ('all_selected', 'All of Selected Children'),
+    ]
+    
     name = models.CharField(max_length=255)
     comment = models.CharField(max_length=255, default="", blank=True)
     points = models.IntegerField(default=0)
     multiplier_type = models.BooleanField(default=False)
     available = models.BooleanField(default=True)
     daily = models.BooleanField(default=False)
-    persistent = models.BooleanField(default=False)
+    assignment_type = models.CharField(max_length=20, choices=ASSIGNMENT_CHOICES, default='any_child')
+    assigned_children = models.ManyToManyField('User', blank=True, related_name='assigned_chores', limit_choices_to={'role': 'Child'})
     earlyBonus = models.BooleanField(default=False)
+    bonus_end_time = models.IntegerField(default=14, help_text="Hour when bonus expires (24-hour format, 0-23)")
     availableTime = models.IntegerField(default=0)
 
 
