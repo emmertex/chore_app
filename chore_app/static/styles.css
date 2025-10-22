@@ -337,6 +337,38 @@ code {
     color: #a395a2;
 }
 
+/* Universal Container Classes */
+.page-container {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.content-wrapper {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.form-container {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.form-wrapper {
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 15px;
+    padding: 30px;
+    width: 100%;
+    max-width: 600px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
 /* Authentication Forms */
 .auth-container {
     display: flex;
@@ -418,4 +450,100 @@ code {
     padding: 12px;
     font-size: 16px;
     font-weight: 500;
+}
+
+/* Form styling to match dashboard aesthetic */
+.form-block {
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 15px;
+    padding: 20px;
+    margin: 10px 0;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.form-block h1 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #9955ff;
+}
+
+.form-fields p {
+    margin-bottom: 15px;
+}
+
+.form-fields label {
+    display: block;
+    margin-bottom: 5px;
+    color: #bec1c7;
+    font-weight: 500;
+}
+
+.form-fields input[type="text"],
+.form-fields input[type="email"],
+.form-fields input[type="password"],
+.form-fields input[type="number"],
+.form-fields textarea,
+.form-fields select {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #525860;
+    border-radius: 8px;
+    background-color: #353b45;
+    color: #bec1c7;
+    font-size: 16px;
+    box-sizing: border-box;
+    transition: border-color 0.3s ease;
+}
+
+.form-fields input[type="text"]:focus,
+.form-fields input[type="email"]:focus,
+.form-fields input[type="password"]:focus,
+.form-fields input[type="number"]:focus,
+.form-fields textarea:focus,
+.form-fields select:focus {
+    outline: none;
+    border-color: #528bff;
+    box-shadow: 0 0 0 2px rgba(82, 139, 255, 0.2);
+}
+
+.form-fields .errorlist {
+    list-style: none;
+    padding: 0;
+    margin: 5px 0 0 0;
+}
+
+.form-fields .errorlist li {
+    color: #ff6b6b;
+    font-size: 14px;
+    margin-bottom: 5px;
+    background-color: rgba(255, 107, 107, 0.1);
+    padding: 5px 10px;
+    border-radius: 5px;
+    border-left: 3px solid #ff6b6b;
+}
+
+.form-actions {
+    text-align: center;
+    margin-top: 20px;
+}
+
+.form-actions button {
+    background-color: #528bff;
+    color: #fff;
+    border: none;
+    padding: 12px 30px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 500;
+    transition: background-color 0.3s ease;
+    min-width: 120px;
+}
+
+.form-actions button:hover {
+    background-color: #61afef;
+}
+
+.form-actions button:active {
+    transform: translateY(1px);
 }

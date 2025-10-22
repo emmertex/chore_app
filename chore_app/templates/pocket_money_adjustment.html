@@ -1,20 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
-  <html>
-    <head>
-      <title>Pocket Money Adjustment</title>
-      {% load static %}
-      <link rel="stylesheet" href="{% static 'styles.css' %}" />
-      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    </head>
+  <head>
+    <title>Pocket Money Adjustment</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'styles.css' %}" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  </head>
 
-    <body>
-      <h1>Pocket Money Adjustment</h1>
-      <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">Apply</button>
-      </form>
-    </body>
-  </html>
+  <body>
+    <div class="page-container">
+      <div class="content-wrapper">
+        <div class="form-block">
+          <h1>Pocket Money Adjustment</h1>
+          <form method="post">
+            {% csrf_token %}
+            <div class="form-fields">
+              {{ form.as_p }}
+            </div>
+            <div class="form-actions">
+              <button type="submit">Apply</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </body>
 </html>
