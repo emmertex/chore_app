@@ -1,20 +1,26 @@
 <!DOCTYPE html>
 <html lang="en">
-  <html>
-    <head>
-      <title>Register</title>
-      {% load static %}
-      <link rel="stylesheet" href="{% static 'styles.css' %}" />
-      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    </head>
+  <head>
+    <title>Register</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'styles.css' %}" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  </head>
 
-    <body>
-      <h1>Register</h1>
-      <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">Register</button>
-      </form>
-    </body>
-  </html>
+  <body>
+    <div class="auth-container">
+      <div class="auth-form">
+        <h1>Register</h1>
+        <form method="post">
+          {% csrf_token %}
+          <div class="form-fields">
+            {{ form.as_p }}
+          </div>
+          <div class="form-actions">
+            <button type="submit">Register</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </body>
 </html>
