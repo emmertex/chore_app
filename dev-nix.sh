@@ -30,10 +30,6 @@ pkgs.mkShell {
     pip install django django-allauth django-cron
     echo "Python packages installed."
     
-    # Fix django-cron migrations for Django 5.2+ compatibility
-    echo "Fixing django-cron migrations for Django 5.2+ compatibility..."
-    python fix_django_cron_migrations.py
-    
     # Run Django migrations if needed
     echo "Running Django migrations..."
     python manage.py makemigrations
