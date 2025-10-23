@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-<html>
 
 <head>
     <title>{{ user.username }}'s Dashboard</title>
@@ -53,10 +52,13 @@
                 Create a custom chore
             </div>
             {% if user.points_balance > minimum_points %}
-            <div class="innerBlock"
-                onclick="if (confirm('Are you sure you want to convert your points?')) {window.location.href='{% url 'convert_points_to_money' user.pk %}' }">
-                Convert 100 Points to ${{ pocket_money_amount }} Pocket Money
-            </div>
+            <form method="post" action="{% url 'convert_points_to_money' user.pk %}" style="display: block;">
+                {% csrf_token %}
+                <div class="innerBlock"
+                    onclick="if (confirm('Are you sure you want to convert your points?')) { this.parentElement.submit(); }">
+                    Convert 100 Points to ${{ pocket_money_amount }} Pocket Money
+                </div>
+            </form>
             {% endif %}
         </div>
 
@@ -75,19 +77,19 @@
                             {{ chore.comment }}
                         </div>
                         <div class="small-text time">
-                            {% if chore.earlyBonus %}
+                            {% if chore.early_bonus %}
                                 {% now "H" as current_hour %}
-                                {% if current_hour|add:0 <= chore.bonus_end_time and current_hour|add:0 > 5 %}
+                                {% if current_hour <= chore.bonus_end_time and current_hour > 5 %}
                                     Bonus Points Before {{ chore.bonus_end_time }}:00
-                                {% elif chore.availableTime < 0 %}
-                                    Available Before {{ chore.availableTime|abs_filter }}:00
+                                {% elif chore.available_time < 0 %}
+                                    Available Before {{ chore.available_time|abs_filter }}:00
                                 {% endif %}
-                            {% elif chore.availableTime < 0 %}
-                                Available Before {{ chore.availableTime|abs_filter }}:00
+                            {% elif chore.available_time < 0 %}
+                                Available Before {{ chore.available_time|abs_filter }}:00
                             {% endif %}
                         </div>
                     </div>
-                    <div class="choreRight">{{ chore.points }} {% if chore.earlyBonus %}{% now "H" as current_hour %}{% if current_hour|add:0 <= chore.bonus_end_time and current_hour|add:0 > 5 %} + {{ chore.points|halve }}{% endif %}{% endif %}</div>
+                    <div class="choreRight">{{ chore.points }} {% if chore.early_bonus %}{% now "H" as current_hour %}{% if current_hour <= chore.bonus_end_time and current_hour > 5 %} + {{ chore.points|halve }}{% endif %}{% endif %}</div>
                 </div>
             </div>
             {% endif %}
@@ -103,16 +105,16 @@
                             {{ chore.comment }}
                         </div>
                         <div class="small-text time">
-                            Available After {{ chore.availableTime }}:00
-                            {% if chore.earlyBonus %}
+                            Available After {{ chore.available_time }}:00
+                            {% if chore.early_bonus %}
                                 {% now "H" as current_hour %}
-                                {% if current_hour|add:0 <= chore.bonus_end_time and current_hour|add:0 > 5 %}
+                                {% if current_hour <= chore.bonus_end_time and current_hour > 5 %}
                                     (Bonus Points Before {{ chore.bonus_end_time }}:00)
                                 {% endif %}
                             {% endif %}
                         </div>
                     </div>
-                    <div class="choreRight">{{ chore.points }} {% if chore.earlyBonus %}{% now "H" as current_hour %}{% if current_hour|add:0 <= chore.bonus_end_time and current_hour|add:0 > 5 %} + {{ chore.points|halve }}{% endif %}{% endif %}</div>
+                    <div class="choreRight">{{ chore.points }} {% if chore.early_bonus %}{% now "H" as current_hour %}{% if current_hour <= chore.bonus_end_time and current_hour > 5 %} + {{ chore.points|halve }}{% endif %}{% endif %}</div>
                 </div>
             </div>
             {% endfor %}
@@ -130,7 +132,7 @@
                             {{ chore.comment }}
                         </div>
                         <div class="small-text time">
-                            Was Available Before {{ chore.availableTime }}:00
+                            Was Available Before {{ chore.available_time }}:00
                         </div>
                     </div>
                     <div class="choreRight">-{{ chore.points }}</div>
@@ -156,7 +158,7 @@
             <div class="innerBlock penalised">
             {% endif %}
                 <div class="buttonContainer">
-                    <div class="choreLeft">{{ cchore.choreName }} 
+                    <div class="choreLeft">{{ cchore.chore_name }} 
                         <div class="small-text description">{{ cchore.comment }}</div>
                     </div>
                     {% if cchore.approved > 0 %}

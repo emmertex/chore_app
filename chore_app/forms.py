@@ -7,7 +7,7 @@ class ChoreForm(forms.ModelForm):
     class Meta:
         model = Chore
         fields = ['name', 'comment', 'points', 'available',
-                  'daily', 'assignment_type', 'assigned_children', 'earlyBonus', 'bonus_end_time', 'availableTime']
+                  'daily', 'assignment_type', 'assigned_children', 'early_bonus', 'bonus_end_time', 'available_time']
         labels = {
             'name': 'Chore Name',
             'comment': 'Details of Chore',
@@ -16,13 +16,13 @@ class ChoreForm(forms.ModelForm):
             'daily': 'Automatically Available Daily',
             'assignment_type': 'Assignment Type',
             'assigned_children': 'Select Children (for "Any of Selected" or "All of Selected")',
-            'earlyBonus': 'Early Bonus Points if done early',
+            'early_bonus': 'Early Bonus Points if done early',
             'bonus_end_time': 'Bonus Points Before (hour, 0-23)',
-            'availableTime': 'Time in which chore is available (+13 means after 1pm, -13 means before 1pm)'
+            'available_time': 'Time in which chore is available (+13 means after 1pm, -13 means before 1pm)'
         }
         widgets = {
             'comment': forms.Textarea(attrs={'rows': 2, 'placeholder': 'Optional'}),
-            'availableTime': forms.NumberInput(attrs={'type': 'number', 'step': 'any'}),
+            'available_time': forms.NumberInput(attrs={'type': 'number', 'step': 'any'}),
             'bonus_end_time': forms.NumberInput(attrs={'type': 'number', 'min': '0', 'max': '23'}),
             'assigned_children': forms.CheckboxSelectMultiple()
         }
@@ -32,7 +32,7 @@ class EditChoreForm(forms.ModelForm):
     class Meta:
         model = Chore
         fields = ['name', 'comment', 'points', 'available',
-                  'daily', 'assignment_type', 'assigned_children', 'earlyBonus', 'bonus_end_time', 'availableTime']
+                  'daily', 'assignment_type', 'assigned_children', 'early_bonus', 'bonus_end_time', 'available_time']
         labels = {
             'name': 'Chore Name',
             'comment': 'Details of Chore',
@@ -41,13 +41,13 @@ class EditChoreForm(forms.ModelForm):
             'daily': 'Automatically Available Daily',
             'assignment_type': 'Assignment Type',
             'assigned_children': 'Select Children (for "Any of Selected" or "All of Selected")',
-            'earlyBonus': 'Early Bonus Points if done early',
+            'early_bonus': 'Early Bonus Points if done early',
             'bonus_end_time': 'Bonus Points Before (hour, 0-23)',
-            'availableTime': 'Time in which chore is available (+ for after, - for before, 0 for always available)'
+            'available_time': 'Time in which chore is available (+ for after, - for before, 0 for always available)'
         }
         widgets = {
             'comment': forms.Textarea(attrs={'rows': 2, 'placeholder': 'Optional'}),
-            'availableTime': forms.NumberInput(attrs={'type': 'number', 'step': 'any'}),
+            'available_time': forms.NumberInput(attrs={'type': 'number', 'step': 'any'}),
             'bonus_end_time': forms.NumberInput(attrs={'type': 'number', 'min': '0', 'max': '23'}),
             'assigned_children': forms.CheckboxSelectMultiple()
         }
@@ -81,9 +81,9 @@ class PocketMoneyAdjustmentForm(forms.ModelForm):
 class CustomChildChore(forms.ModelForm):
     class Meta:
         model = ChoreClaim
-        fields = ['choreName', 'points', 'comment']
+        fields = ['chore_name', 'points', 'comment']
         labels = {
-            'choreName': 'What did you do?',
+            'chore_name': 'What did you do?',
             'points': 'How many points is it worth?',
             'comment': 'Any additional comments?'
         }

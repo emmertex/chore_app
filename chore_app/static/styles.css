@@ -5,6 +5,30 @@ body {
     font-family: 'Roboto', sans-serif;
     font-size: 16px;
     margin: 0;
+    overflow-x: hidden; /* Prevent horizontal scrollbar issues */
+}
+
+/* Ensure no unwanted scrollbars */
+* {
+    box-sizing: border-box;
+}
+
+/* Hide scrollbars but keep functionality */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #282c34;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #525860;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #6c757d;
 }
 
 a {
@@ -109,8 +133,12 @@ code {
 .buttonContainer {
     display: flex;
     justify-content: space-between;
+    align-items: center;
     /* height: 24px; */
     word-wrap: normal;
+    min-width: 0; /* Allow flex items to shrink */
+    overflow: hidden; /* Prevent any overflow */
+    position: relative; /* Ensure proper positioning context */
 }
 
 .choreLeft {
@@ -118,6 +146,9 @@ code {
     text-align: left;
     font-size: 18px;
     font-weight: normal;
+    flex: 1;
+    min-width: 0; /* Allow text to wrap */
+    margin-right: 10px;
 }
 
 .choreRight {
@@ -134,12 +165,11 @@ code {
     animation-duration: 4s;
     animation-iteration-count: infinite;
     animation-timing-function: linear;
-    flex-wrap: nowrap;
-    word-wrap: none;
+    flex-shrink: 0; /* Prevent shrinking */
     white-space: nowrap;
     display: flex;
     align-items: center;
-    margin-left: 15px;
+    margin-left: 10px;
 }
 
 .choreRightClaimed {
@@ -156,12 +186,11 @@ code {
     animation-duration: 4s;
     animation-iteration-count: infinite;
     animation-timing-function: linear;
-    flex-wrap: nowrap;
-    word-wrap: none;
+    flex-shrink: 0; /* Prevent shrinking */
     white-space: nowrap;
     display: flex;
     align-items: center;
-    margin-left: 15px;
+    margin-left: 10px;
 }
 
 .choreRightClaimed.penalised {
@@ -201,6 +230,10 @@ code {
     left: 50%;
     transform: translate(-50%, -50%);
     position: absolute;
+    z-index: 101; /* Ensure it's above the overlay */
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
 }
 
 .innerBlock {
@@ -218,6 +251,7 @@ code {
     border: none;
     position: relative;
     text-decoration: none;
+    overflow: hidden; /* Prevent any overflow issues */
 }
 
 .innerBlock.small {
@@ -238,12 +272,18 @@ code {
 
 .innerBlock.edit {
     font-size: 20px;
-    flex-wrap: nowrap;
-    word-wrap: none;
+    flex-shrink: 0; /* Prevent shrinking */
     white-space: nowrap;
     display: flex;
     align-items: center;
-    margin-left: 15px;
+    margin-left: 10px;
+    min-width: 40px; /* Ensure minimum width for edit button */
+    justify-content: center;
+    position: relative; /* Ensure proper positioning context */
+    z-index: 1; /* Ensure it's above other content */
+    background-color: rgba(255, 255, 255, 0.1); /* Ensure solid background */
+    border-radius: 15px; /* Match other innerBlock styling */
+    padding: 8px 12px; /* Add some padding for better appearance */
 }
 
 .innerBlock.v0 {
@@ -313,6 +353,13 @@ code {
     background-color: rgb(0, 0, 0, 0.7);
     border-radius: 15px;
     padding: 10px;
+    display: none; /* Ensure it's hidden by default */
+    pointer-events: none; /* Prevent interaction when hidden */
+}
+
+.chore-options[style*="display: block"] {
+    display: block !important;
+    pointer-events: auto; /* Allow interaction when shown */
 }
 
 .chore-modal {
