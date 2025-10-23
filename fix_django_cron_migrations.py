@@ -96,6 +96,17 @@ class Migration(migrations.Migration):
     print(f"Created clean initial migration: {migration_file}")
 
 
+def check_if_migrations_are_clean(migrations_path):
+    """Check if migrations are already clean (no index_together)."""
+    # Check if there's already a clean migration
+    initial_migration = os.path.join(migrations_path, '0001_initial.py')
+    if os.path.exists(initial_migration):
+        with open(initial_migration, 'r') as f:
+            content = f.read()
+            if 'indexes' in content and 'index_together' not in content:
+                return True
+    return False
+
 def main():
     """Main function to fix django-cron migrations."""
     print("Fixing django-cron migrations for Django 5.2+ compatibility...")
@@ -106,6 +117,11 @@ def main():
         sys.exit(1)
     
     print(f"Found django_cron migrations at: {migrations_path}")
+    
+    # Check if migrations are already clean
+    if check_if_migrations_are_clean(migrations_path):
+        print("✅ django-cron migrations are already clean and compatible with Django 5.2+")
+        return
     
     # Backup old migrations
     backup_old_migrations(migrations_path)
