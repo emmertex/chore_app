@@ -47,6 +47,17 @@ To prepare your system (Linux, MacOS, WSL2) for running the application, execute
 3. Sets up the Django migrations and applies them to initialize the database.
 4. Loads initial settings from `settings.json` into the database, ensuring this is done only once.
 
+#### Django 5.2+ Compatibility Fix
+
+The installation scripts automatically fix a compatibility issue with the django-cron package and Django 5.2+. If you encounter a `TypeError: 'class Meta' got invalid attribute(s): index_together` error during manual installation, you can run:
+
+```bash
+python fix_django_cron_migrations.py
+python manage.py migrate
+```
+
+This script removes old migration files that use deprecated syntax and creates clean, compatible ones.
+
 ### Running the Application
 
 MacOS, Linux, and WSL: Use the `launch.sh` script to start the application. This script handles:

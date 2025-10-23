@@ -17,6 +17,9 @@ if %errorlevel% neq 0 (
     python -m pip install django django-allauth django-cron
 )
 
+echo Fixing django-cron migrations for Django 5.2+ compatibility...
+python fix_django_cron_migrations.py
+
 python manage.py makemigrations
 python manage.py makemigrations chore_app
 python manage.py migrate

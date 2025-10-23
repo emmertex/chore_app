@@ -23,6 +23,10 @@ if ! command -v django-admin &>/dev/null; then
     python3 -m pip install django django-allauth django-cron
 fi
 
+# Fix django-cron migrations for Django 5.2+ compatibility
+echo "Fixing django-cron migrations for Django 5.2+ compatibility..."
+python3 fix_django_cron_migrations.py
+
 python3 manage.py makemigrations
 python3 manage.py makemigrations chore_app
 python3 manage.py migrate
