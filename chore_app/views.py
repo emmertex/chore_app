@@ -199,6 +199,13 @@ def child_profile(request):
     # Get claimed chore names for filtering
     claimed_chore_names = list(claimed_chores.values_list('chore_name', flat=True))
     
+    # Get chores claimed by other children for "any_selected" tasks
+    # This prevents other selected children from seeing tasks already claimed by someone else
+    claimed_by_others = models.ChoreClaim.objects.filter(
+        chore__assignment_type='any_selected',
+        chore__assigned_children=request.user
+    ).values_list('chore', flat=True)
+    
     # Filter chores based on assignment type and user eligibility using database queries
     # Use Q objects to combine conditions instead of union
     eligible_chores_qs = chores.filter(
@@ -232,14 +239,20 @@ def child_profile(request):
     
     filtered_chores = eligible_chores_qs.exclude(
         name__in=claimed_chore_names
+    ).exclude(
+        id__in=claimed_by_others
     ).filter(available_time_filter)
     
     future_chores = eligible_chores_qs.exclude(
         name__in=claimed_chore_names
+    ).exclude(
+        id__in=claimed_by_others
     ).filter(future_time_filter)
     
     missed_chores = eligible_chores_qs.exclude(
         name__in=claimed_chore_names
+    ).exclude(
+        id__in=claimed_by_others
     ).filter(missed_time_filter)
     
 
@@ -491,8 +504,12 @@ def claim_chore(request, pk):
             elif chore.assignment_type == 'all_children':
                 # Keep available for all children
                 pass
-            elif chore.assignment_type in ['any_selected', 'all_selected']:
-                # Check if all selected children have claimed it
+            elif chore.assignment_type == 'any_selected':
+                # For "Any of Selected Children", hide after ANY selected child claims it
+                chore.available = False
+                chore.save()
+            elif chore.assignment_type == 'all_selected':
+                # For "All of Selected Children", only hide after ALL selected children claim it
                 selected_children = chore.assigned_children.all()
                 claimed_by_selected = models.ChoreClaim.objects.filter(
                     chore=chore, 

@@ -38,6 +38,12 @@ class Chore(models.Model):
         super().clean()
         if not (0 <= self.bonus_end_time <= 23):
             raise ValidationError({'bonus_end_time': 'Bonus end time must be between 0 and 23 (24-hour format)'})
+    
+    class Meta:
+        indexes = [
+            models.Index(fields=['assignment_type', 'available']),  # For filtering by assignment type and availability
+            models.Index(fields=['available', 'available_time']),    # For time-based filtering
+        ]
 
 
 class ChoreClaim(models.Model):
@@ -53,6 +59,7 @@ class ChoreClaim(models.Model):
         indexes = [
             models.Index(fields=['user', 'approved']),
             models.Index(fields=['chore', 'user']),
+            models.Index(fields=['chore', 'user', 'approved']),  # For filtering claimed chores by other users
         ]
 
 
