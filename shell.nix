@@ -2,6 +2,7 @@
 
 pkgs.mkShell {
   buildInputs = with pkgs; [
+    tmux
     python313
     python313Packages.pip
     python313Packages.virtualenv
