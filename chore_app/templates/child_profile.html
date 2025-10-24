@@ -48,9 +48,7 @@
                 {% endfor %}
             </div>
             {% endif %}
-            <div class="innerBlock" onclick="window.location.href='{% url 'child_chore' %}'" class="open-chore-modal">
-                Create a custom chore
-            </div>
+            <a class="innerBlock open-chore-modal" href="{% url 'child_chore' %}">Create a custom chore</a>
             {% if user.points_balance > minimum_points %}
             <form method="post" action="{% url 'convert_points_to_money' user.pk %}" style="display: block;">
                 {% csrf_token %}
@@ -166,6 +164,9 @@
                     <div class="choreLeft">{{ cchore.chore_name }} 
                         <div class="small-text description">{{ cchore.comment }}</div>
                     </div>
+                    {% if cchore.approved == 0 %}
+                    <div class="choreRightClaimed">Pending Approval for {{ cchore.points }}</div>
+                    {% endif %}
                     {% if cchore.approved > 0 %}
                     <div class="choreRightClaimed">Approved for {{ cchore.approved }}</div>
                     {% endif %}
