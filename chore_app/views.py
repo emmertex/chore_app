@@ -281,7 +281,6 @@ def child_profile(request):
 
 
 @login_required
-@require_POST
 def create_chore(request):
     if request.user.role != 'Parent':
         return redirect('child_profile')
