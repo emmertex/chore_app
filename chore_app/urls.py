@@ -24,7 +24,6 @@ urlpatterns = [
     path('', views.parent_profile, name='parent_profile'),
     # path('accounts/', include('allauth.urls')),
     # path('admin/', admin.site.urls),
-    path('accounts/login/', auth_views.LoginView.as_view(), name='login'),
     path('register/', views.register, name='register'),
     path('login/', auth_views.LoginView.as_view(), name='login'),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),

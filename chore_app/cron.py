@@ -21,7 +21,7 @@ class NightlyAction(CronJobBase):
             job_code=self.code, defaults={'run_date': datetime.now().date()})
 
     def do(self):
-        if not self.has_run_today(self.code):
+        if not has_run_today(self.code):
             try:
                 # Get a parent user as approver for automated actions
                 approver = models.User.objects.filter(role='Parent').first()
@@ -34,7 +34,7 @@ class NightlyAction(CronJobBase):
             logging.debug("Nightly job has already been run today; skipping execution.")
 
 def has_run_today(job_code):
-    last_run = models.RunLog.objects.filter(job_code=job_code).first()
+    last_run = models.RunLog.objects.filter(job_code=job_code).order_by('-run_date').first()
     if not last_run:
         return False
     current_date = datetime.now().date()

@@ -9,6 +9,7 @@ from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import F, Q, Sum
 from django.shortcuts import redirect, render
+from django.views.decorators.http import require_POST
 
 import chore_app.forms as forms
 import chore_app.models as models
@@ -128,7 +129,7 @@ def edit_text(request, pk):
                 return redirect('parent_profile')
         else:
             form = forms.EditTextForm(instance=text)
-        return render(request, 'edit_text.html', {'form': form, 'text': models.Text.objects.get(pk=pk)})
+        return render(request, 'edit_text.html', {'form': form, 'text': text})
     except (models.Text.DoesNotExist, Exception) as e:
         logger.error(f"Error in edit_text: {e}")
         return redirect('parent_profile')
@@ -245,9 +246,9 @@ def child_profile(request):
     settings = {setting.key: setting.value for setting in models.Settings.objects.all()}
 
     context = {
-        'minimum_points': models.Settings.objects.get(key='max_points').value / 2,
+        'minimum_points': settings['max_points'] / 2,
         'pocket_money': request.user.pocket_money / 100,
-        'pocket_money_amount': models.Settings.objects.get(key='point_value').value,
+        'pocket_money_amount': settings['point_value'],
         'points': request.user.points_balance,
         'chores': filtered_chores,
         'chore_points': chore_points,
@@ -267,6 +268,7 @@ def child_profile(request):
 
 
 @login_required
+@require_POST
 def create_chore(request):
     if request.user.role != 'Parent':
         return redirect('child_profile')
@@ -308,6 +310,7 @@ def edit_chore(request, pk):
 
 
 @login_required
+@require_POST
 def toggle_availability(request, pk):
     if request.user.role != 'Parent':
         return redirect('child_profile')
@@ -326,6 +329,7 @@ def toggle_availability(request, pk):
 
 
 @login_required
+@require_POST
 def convert_points_to_money(request, pk):
     if request.user.role != 'Child' or request.user.pk != pk:
         return redirect('child_profile')
@@ -382,6 +386,7 @@ def convert_points_to_money(request, pk):
 
 
 @login_required
+@require_POST
 def delete_chore(request, pk):
     if request.user.role != 'Parent':
         return redirect('child_profile')
@@ -395,6 +400,7 @@ def delete_chore(request, pk):
     return redirect('parent_profile')
 
 @login_required
+@require_POST
 def penalise_chore(request, pk):
     if request.user.role != 'Parent':
         return redirect('child_profile')
@@ -414,6 +420,7 @@ def penalise_chore(request, pk):
 
 
 @login_required
+@require_POST
 def claim_chore(request, pk):
     try:
         current_time = datetime.datetime.now().time()
@@ -505,6 +512,7 @@ def claim_chore(request, pk):
 
 
 @login_required
+@require_POST
 def return_chore(request, pk):
     try:
         choreClaim = models.ChoreClaim.objects.get(pk=pk)
@@ -613,6 +621,7 @@ def approve_chore_claim(request, pk, penalty, auto=False):
         return HttpResponse("OK")
 
 @login_required
+@require_POST
 def reject_chore_claim(request, pk):
     if request.user.role != 'Parent':
         return redirect('child_profile')
