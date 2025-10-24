@@ -604,6 +604,11 @@ def approve_chore_claim(request, pk, penalty, auto=False):
                 choreClaim.approved = points_awarded
                 choreClaim.save()
                 
+                # For non-daily chores, ensure they remain unavailable after completion
+                if choreClaim.chore and not choreClaim.chore.daily:
+                    choreClaim.chore.available = False
+                    choreClaim.chore.save()
+                
                 if not auto:
                     django_messages.success(request, f'Chore claim approved for {points_awarded} points!')
                 
