@@ -70,28 +70,31 @@
             {% if chores %}
             {% for chore in chores %}
             {% if chore not in claimed_chores %}
-            <div class="innerBlock" onclick="window.location.href='{% url 'claim_chore' chore.pk %}'">
-                <div class="buttonContainer">
-                    <div class="choreLeft">{{ chore.name }}
-                        <div class="small-text description">
-                            {{ chore.comment }}
-                        </div>
-                        <div class="small-text time">
-                            {% if chore.early_bonus %}
-                                {% now "H" as current_hour %}
-                                {% if current_hour <= chore.bonus_end_time and current_hour > 5 %}
-                                    Bonus Points Before {{ chore.bonus_end_time }}:00
+            <form method="post" action="{% url 'claim_chore' chore.pk %}" style="display: block;">
+                {% csrf_token %}
+                <div class="innerBlock" onclick="this.parentElement.submit()">
+                    <div class="buttonContainer">
+                        <div class="choreLeft">{{ chore.name }}
+                            <div class="small-text description">
+                                {{ chore.comment }}
+                            </div>
+                            <div class="small-text time">
+                                {% if chore.early_bonus %}
+                                    {% now "H" as current_hour %}
+                                    {% if current_hour <= chore.bonus_end_time and current_hour > 5 %}
+                                        Bonus Points Before {{ chore.bonus_end_time }}:00
+                                    {% elif chore.available_time < 0 %}
+                                        Available Before {{ chore.available_time|abs_filter }}:00
+                                    {% endif %}
                                 {% elif chore.available_time < 0 %}
                                     Available Before {{ chore.available_time|abs_filter }}:00
                                 {% endif %}
-                            {% elif chore.available_time < 0 %}
-                                Available Before {{ chore.available_time|abs_filter }}:00
-                            {% endif %}
+                            </div>
                         </div>
+                        <div class="choreRight">{{ chore.points }} {% if chore.early_bonus %}{% now "H" as current_hour %}{% if current_hour <= chore.bonus_end_time and current_hour > 5 %} + {{ chore.points|halve }}{% endif %}{% endif %}</div>
                     </div>
-                    <div class="choreRight">{{ chore.points }} {% if chore.early_bonus %}{% now "H" as current_hour %}{% if current_hour <= chore.bonus_end_time and current_hour > 5 %} + {{ chore.points|halve }}{% endif %}{% endif %}</div>
                 </div>
-            </div>
+            </form>
             {% endif %}
             {% endfor %}
             {% endif %}
@@ -149,7 +152,9 @@
 
             {% for cchore in claimed_chores %}
             {% if cchore.approved == 0 %}
-            <div class="innerBlock" onclick="window.location.href='{% url 'return_chore' cchore.pk %}'">
+            <form method="post" action="{% url 'return_chore' cchore.pk %}" style="display: block;">
+                {% csrf_token %}
+                <div class="innerBlock" onclick="this.parentElement.submit()">
             {% endif %}
             {% if cchore.approved > 0 %}
             <div class="innerBlock approved">
@@ -169,6 +174,9 @@
                     {% endif %}
                 </div>
             </div>
+            {% if cchore.approved == 0 %}
+            </form>
+            {% endif %}
             {% endfor %}
         </div>
 
