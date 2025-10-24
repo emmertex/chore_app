@@ -40,12 +40,40 @@ Looking into the idea of using scrapy to automatically grab screen time from Mic
 
 ### Installation
 
+#### Quick Setup (Recommended)
+For the fastest setup, run the `setup.sh` script:
+```bash
+bash setup.sh
+```
+
+This script handles everything automatically and is the recommended way to set up the application.
+
+#### Alternative Installation Methods
 To prepare your system (Linux, MacOS, WSL2) for running the application, execute the `install.sh` script, or for Windows without WSL, the `install.bat`. This script automates the following tasks:
 
 1. Checks for Python 3 and installs it if missing, using the appropriate package manager for your system.
 2. Installs Django using Python's pip if it's not already installed.
 3. Sets up the Django migrations and applies them to initialize the database.
 4. Loads initial settings from `settings.json` into the database, ensuring this is done only once.
+
+#### Django 5.2+ Compatibility Fix
+
+The installation scripts automatically fix a compatibility issue with the django-cron package and Django 5.2+. If you encounter a `TypeError: 'class Meta' got invalid attribute(s): index_together` error during manual installation, you can run:
+
+```bash
+python fix_django_cron_migrations.py
+python manage.py migrate
+```
+
+This script removes old migration files that use deprecated syntax and creates clean, compatible ones.
+
+#### After Git Pulls
+If you encounter the `index_together` error after pulling updates from git, simply run:
+```bash
+bash setup.sh
+```
+
+This will fix the django-cron migrations and ensure everything works correctly.
 
 ### Running the Application
 

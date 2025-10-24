@@ -4,3 +4,4 @@ INSTALL_LOCK
 *.pyc
 chore_app/migrations
 chore_app/__pycache__
+venv/

@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-<html>
 
 <head>
     <title>{{ user.username }}'s Dashboard</title>
@@ -27,36 +26,43 @@
         <div class="block">
             <h3>Claimed Chores Waiting for Approval</h3>
                     {% for chore_claim in claimed_chores %}
-                    <div style="display: flex; flex-direction: row; flex-wrap: nowrap; width: 100%;">
-                        <div class="innerBlock" onclick="window.location.href='{% url 'approve_chore_claim' chore_claim.pk 0 %}'" style="width: 100%;">
-                            <div class="buttonContainer">
-                                <div class="choreLeft">{{ chore_claim.user }}</div>
-                                <div>
-                                    {{ chore_claim.choreName }} 
-                                    <div class="small-text description">
-                                        {{ chore_claim.comment }}
+                    <div style="display: flex; flex-direction: row; align-items: stretch; gap: 10px; width: 100%;">
+                        <form method="post" action="{% url 'approve_chore_claim' chore_claim.pk 0 %}" style="flex: 1; display: block;">
+                            {% csrf_token %}
+                            <div class="innerBlock" onclick="this.parentElement.submit()" style="width: 100%;">
+                                <div class="buttonContainer">
+                                    <div class="choreLeft">{{ chore_claim.user }}</div>
+                                    <div>
+                                        {{ chore_claim.chore_name }} 
+                                        <div class="small-text description">
+                                            {{ chore_claim.comment }}
+                                        </div>
                                     </div>
+                                
+                                    <div class="choreRight">{{ chore_claim.points }}</div>
                                 </div>
-                            
-                                <div class="choreRight">{{ chore_claim.points }}</div>
                             </div>
-                        </div>
+                        </form>
                     
                         <div class="innerBlock edit" id="chore-claim-modal-{{ chore_claim.pk }}">✏️
                             <div class="chore-options" id="chore-claim-options-{{ chore_claim.pk }}" style="display: none;">
                                 <div class="block opaque">
-                                    <div class="innerBlock green"
-                                        onclick="window.location.href='{% url 'approve_chore_claim' chore_claim.pk 0 %}'">
-                                        Approve</div>
-                                    <div class="innerBlock"
-                                        onclick="window.location.href='{% url 'approve_chore_claim' chore_claim.pk 25 %}'">
-                                        Approve with 75% Points</div>
-                                    <div class="innerBlock"
-                                        onclick="window.location.href='{% url 'approve_chore_claim' chore_claim.pk 50 %}'">
-                                        Approve with 50% Points</div>
-                                    <div class="innerBlock red"
-                                        onclick="window.location.href='{% url 'reject_chore_claim' chore_claim.pk %}'">
-                                        Reject</div>
+                                    <form method="post" action="{% url 'approve_chore_claim' chore_claim.pk 0 %}" style="display: inline;">
+                                        {% csrf_token %}
+                                        <div class="innerBlock green" onclick="this.parentElement.submit()">Approve</div>
+                                    </form>
+                                    <form method="post" action="{% url 'approve_chore_claim' chore_claim.pk 25 %}" style="display: inline;">
+                                        {% csrf_token %}
+                                        <div class="innerBlock" onclick="this.parentElement.submit()">Approve with 75% Points</div>
+                                    </form>
+                                    <form method="post" action="{% url 'approve_chore_claim' chore_claim.pk 50 %}" style="display: inline;">
+                                        {% csrf_token %}
+                                        <div class="innerBlock" onclick="this.parentElement.submit()">Approve with 50% Points</div>
+                                    </form>
+                                    <form method="post" action="{% url 'reject_chore_claim' chore_claim.pk %}" style="display: inline;">
+                                        {% csrf_token %}
+                                        <div class="innerBlock red" onclick="this.parentElement.submit()">Reject</div>
+                                    </form>
                                     <div class="innerBlock" onclick="dismissModal()"
                                         id="chore-claim-modal-{{ chore_claim.pk }}">Cancel</div>
                                 </div>
@@ -73,41 +79,44 @@
             <h3>New Available Chores</h3>
             
             {% for chore in available_chores %}
-            <div style="display: flex; flex-direction: row; flex-wrap: nowrap;">
-                <div class="innerBlock" onclick="window.location.href='{% url 'toggle_availability' chore.pk %}'" style="width: 100%;">
-                    <div class="buttonContainer">
-                        <div class="choreLeft">{{ chore.name }}
-                            <div class="small-text description">
-                                {{ chore.comment }}
+            <div style="display: flex; flex-direction: row; align-items: stretch; gap: 10px;">
+                <form method="post" action="{% url 'toggle_availability' chore.pk %}" style="flex: 1; display: block;">
+                    {% csrf_token %}
+                    <div class="innerBlock" onclick="this.parentElement.submit()" style="width: 100%;">
+                        <div class="buttonContainer">
+                            <div class="choreLeft">{{ chore.name }}
+                                <div class="small-text description">
+                                    {{ chore.comment }}
+                                </div>
+                                <div class="small-text time">
+                                    {% if chore.available_time < 0 %} Available Before {{ chore.available_time|abs_filter }}:00 {% elif chore.available_time > 0 %}
+                                        Available After {{ chore.available_time }}:00
+                                    {% endif %}
+                                </div>
                             </div>
-                            <div class="small-text time">
-                                {% if chore.availableTime < 0 %} Available Before {{ chore.availableTime|abs_filter }}:00 {% elif chore.availableTime > 0 %}
-                                    Available After {{ chore.availableTime }}:00
-                                {% endif %}
+                            <div class="choreRight">{{ chore.points }} {% if chore.early_bonus %} ++ {% endif %}
                             </div>
-                        </div>
-                        <div class="choreRight">{{ chore.points }} {% if chore.earlyBonus %} ++ {% endif %}
                         </div>
                     </div>
-                </div>
+                </form>
                 <div class="innerBlock edit" id="chore-available-modal-{{ chore.pk }}">✏️
                     <div class="chore-options" id="chore-available-options-{{ chore.pk }}" style="display: none;">
                         <div class="block opaque">
                             <div class="innerBlock" onclick="window.location.href='{% url 'edit_chore' chore.pk %}'">
                                 Edit
                             </div>
-                            <div class="innerBlock"
-                                onclick="window.location.href='{% url 'toggle_availability' chore.pk %}'">Make
-                                Unavailable
-                            </div>
-                            <div class="innerBlock"
-                                onclick="if(confirm('Are you sure you want to penalise this chore?')){ window.location.href='{% url 'penalise_chore' chore.pk %}'; }">
-                                Penalise Chore
-                            </div>
-                            <div class="innerBlock red"
-                                onclick="if(confirm('Are you sure you want to delete this chore?')){ window.location.href='{% url 'delete_chore' chore.pk %}'; }">
-                                Delete Chore
-                            </div>
+                            <form method="post" action="{% url 'toggle_availability' chore.pk %}" style="display: inline;">
+                                {% csrf_token %}
+                                <div class="innerBlock" onclick="this.parentElement.submit()">Make Unavailable</div>
+                            </form>
+                            <form method="post" action="{% url 'penalise_chore' chore.pk %}" style="display: inline;">
+                                {% csrf_token %}
+                                <div class="innerBlock" onclick="if(confirm('Are you sure you want to penalise this chore?')){ this.parentElement.submit(); }">Penalise Chore</div>
+                            </form>
+                            <form method="post" action="{% url 'delete_chore' chore.pk %}" style="display: inline;">
+                                {% csrf_token %}
+                                <div class="innerBlock red" onclick="if(confirm('Are you sure you want to delete this chore?')){ this.parentElement.submit(); }">Delete Chore</div>
+                            </form>
                         </div>
                     </div>
                 </div>
@@ -121,37 +130,40 @@
             <h3>New Unavailable Chores</h3>
             
             {% for chore in unavailable_chores %}
-            <div style="display: flex; flex-direction: row; flex-wrap: nowrap;">
-                <div class="innerBlock" onclick="window.location.href='{% url 'toggle_availability' chore.pk %}'" style="width: 100%;">
-                    <div class="buttonContainer">
-                        <div class="choreLeft">{{ chore.name }}
-                            <div class="small-text description">
-                                {{ chore.comment }}
+            <div style="display: flex; flex-direction: row; align-items: stretch; gap: 10px;">
+                <form method="post" action="{% url 'toggle_availability' chore.pk %}" style="flex: 1; display: block;">
+                    {% csrf_token %}
+                    <div class="innerBlock" onclick="this.parentElement.submit()" style="width: 100%;">
+                        <div class="buttonContainer">
+                            <div class="choreLeft">{{ chore.name }}
+                                <div class="small-text description">
+                                    {{ chore.comment }}
+                                </div>
+                                <div class="small-text time">
+                                    {% if chore.available_time < 0 %} Available Before {{ chore.available_time|abs_filter }}:00 {% elif chore.available_time > 0 %}
+                                        Available After {{ chore.available_time }}:00
+                                    {% endif %}
+                                </div>
                             </div>
-                            <div class="small-text time">
-                                {% if chore.availableTime < 0 %} Available Before {{ chore.availableTime|abs_filter }}:00 {% elif chore.availableTime > 0 %}
-                                    Available After {{ chore.availableTime }}:00
-                                {% endif %}
+                            <div class="choreRight">{{ chore.points }} {% if chore.early_bonus %} ++ {% endif %}
                             </div>
-                        </div>
-                        <div class="choreRight">{{ chore.points }} {% if chore.earlyBonus %} ++ {% endif %}
                         </div>
                     </div>
-                </div>
+                </form>
                 <div class="innerBlock edit" id="chore-unavailable-modal-{{ chore.pk }}">✏️
                     <div class="chore-options" id="chore-unavailable-options-{{ chore.pk }}" style="display: none;">
                         <div class="block opaque">
                             <div class="innerBlock" onclick="window.location.href='{% url 'edit_chore' chore.pk %}'">
                                 Edit
                             </div>
-                            <div class="innerBlock"
-                                onclick="window.location.href='{% url 'toggle_availability' chore.pk %}'">
-                                Make Available
-                            </div>
-                            <div class="innerBlock red"
-                                onclick="if(confirm('Are you sure you want to delete this chore?')){ window.location.href='{% url 'delete_chore' chore.pk %}'; }">
-                                Delete Chore
-                            </div>
+                            <form method="post" action="{% url 'toggle_availability' chore.pk %}" style="display: inline;">
+                                {% csrf_token %}
+                                <div class="innerBlock" onclick="this.parentElement.submit()">Make Available</div>
+                            </form>
+                            <form method="post" action="{% url 'delete_chore' chore.pk %}" style="display: inline;">
+                                {% csrf_token %}
+                                <div class="innerBlock red" onclick="if(confirm('Are you sure you want to delete this chore?')){ this.parentElement.submit(); }">Delete Chore</div>
+                            </form>
                         </div>
                     </div>
                 </div>

@@ -21,9 +21,11 @@ class NightlyAction(CronJobBase):
             job_code=self.code, defaults={'run_date': datetime.now().date()})
 
     def do(self):
-        if not self.has_run_today(self.code):
+        if not has_run_today(self.code):
             try:
-                nightly_action(approver=self.approver)  # Pass the `approver` parameter
+                # Get a parent user as approver for automated actions
+                approver = models.User.objects.filter(role='Parent').first()
+                nightly_action(approver=approver)
                 logging.debug("Nightly job is running!")  # Change logging level to debug
                 self.mark_as_run() 
             except Exception as e:
@@ -32,7 +34,7 @@ class NightlyAction(CronJobBase):
             logging.debug("Nightly job has already been run today; skipping execution.")
 
 def has_run_today(job_code):
-    last_run = models.RunLog.objects.filter(job_code=job_code).first()
+    last_run = models.RunLog.objects.filter(job_code=job_code).order_by('-run_date').first()
     if not last_run:
         return False
     current_date = datetime.now().date()
@@ -95,30 +97,39 @@ def apply_leaderboard_scoring(approver, children, settings):
 
     # Apply the medals and points
     if len(chore_points) > 0:
-        children.filter(pk=chore_points[0]['user']).update(
-            place_1=F('place_1') + 1)
-        children.filter(pk=chore_points[0]['user']).update(
-            points_balance=F('points_balance') + settings['leaderboard_awards'])
-        models.PointLog.objects.create(user=models.User.objects.get(
-            pk=chore_points[0]['user']), points_change=settings['leaderboard_awards'], reason=leaderboard_text, approver=approver)
+        # Ensure leaderboard_awards is not zero to prevent division by zero
+        leaderboard_awards = settings.get('leaderboard_awards', 0)
+        if leaderboard_awards > 0:
+            children.filter(pk=chore_points[0]['user']).update(
+                place_1=F('place_1') + 1)
+            children.filter(pk=chore_points[0]['user']).update(
+                points_balance=F('points_balance') + leaderboard_awards)
+            models.PointLog.objects.create(user=models.User.objects.get(
+                pk=chore_points[0]['user']), points_change=leaderboard_awards, reason=leaderboard_text, chore='', approver=approver)
     if len(chore_points) > 1:
-        children.filter(pk=chore_points[1]['user']).update(
-            place_2=F('place_2') + 1)
-        children.filter(pk=chore_points[1]['user']).update(
-            points_balance=F('points_balance') + (settings['leaderboard_awards'] / 2))
-        models.PointLog.objects.create(user=models.User.objects.get(
-            pk=chore_points[1]['user']), points_change=settings['leaderboard_awards'] / 2, reason=leaderboard_text, approver=approver)
+        leaderboard_awards = settings.get('leaderboard_awards', 0)
+        if leaderboard_awards > 0:
+            second_place_award = leaderboard_awards / 2
+            children.filter(pk=chore_points[1]['user']).update(
+                place_2=F('place_2') + 1)
+            children.filter(pk=chore_points[1]['user']).update(
+                points_balance=F('points_balance') + second_place_award)
+            models.PointLog.objects.create(user=models.User.objects.get(
+                pk=chore_points[1]['user']), points_change=second_place_award, reason=leaderboard_text, chore='', approver=approver)
     if len(chore_points) > 2:
-        children.filter(pk=chore_points[2]['user']).update(
-            place_3=F('place_3') + 1)
-        children.filter(pk=chore_points[2]['user']).update(
-            points_balance=F('points_balance') + (settings['leaderboard_awards'] / 5))
-        models.PointLog.objects.create(user=models.User.objects.get(
-            pk=chore_points[2]['user']), points_change=settings['leaderboard_awards'] / 5, reason=leaderboard_text, approver=approver)
+        leaderboard_awards = settings.get('leaderboard_awards', 0)
+        if leaderboard_awards > 0:
+            third_place_award = leaderboard_awards / 5
+            children.filter(pk=chore_points[2]['user']).update(
+                place_3=F('place_3') + 1)
+            children.filter(pk=chore_points[2]['user']).update(
+                points_balance=F('points_balance') + third_place_award)
+            models.PointLog.objects.create(user=models.User.objects.get(
+                pk=chore_points[2]['user']), points_change=third_place_award, reason=leaderboard_text, chore='', approver=approver)
     if len(chore_points) > 3:
         for i in range(3, len(chore_points)):
             models.PointLog.objects.create(user=models.User.objects.get(
-                pk=chore_points[i]['user']), points_change=0, reason=leaderboard_text, approver=approver)
+                pk=chore_points[i]['user']), points_change=0, reason=leaderboard_text, chore='', approver=approver)
     return
 
 
@@ -148,58 +159,59 @@ def incomplete_chore_penalty(approver, child, settings):
 
     if available_chores and settings['incomplete_chores_penalty'] > 0:
         complete_chores = models.ChoreClaim.objects.filter(approved__gt=0)
-        complete_chores_sum = sum(chore.approved for chore in complete_chores)
+        complete_chores_sum = complete_chores.aggregate(total=Sum('approved'))['total'] or 0
 
         completed_by_child = models.ChoreClaim.objects.filter(user=child, approved__gt=0)
-        completed_by_child_sum = sum(chore.points for chore in completed_by_child)
+        completed_by_child_sum = completed_by_child.aggregate(total=Sum('points'))['total'] or 0
 
         penalised_chores = models.ChoreClaim.objects.filter(approved__lt=0)
-        penalised_chores_sum = sum(chore.approved for chore in penalised_chores)
+        penalised_chores_sum = penalised_chores.aggregate(total=Sum('approved'))['total'] or 0
         
-        incomplete_chores_sum = 0
-        completed_by_child_ids = completed_by_child.values_list('chore_id', flat=True)
-        for chore in available_chores:
-            if chore.id not in completed_by_child_ids:
-                incomplete_chores_sum += chore.points
+        # Get completed chore IDs for this child
+        completed_by_child_ids = set(completed_by_child.values_list('chore_id', flat=True))
+        
+        # Calculate incomplete chores sum using aggregation
+        incomplete_chores_sum = available_chores.exclude(
+            id__in=completed_by_child_ids
+        ).aggregate(total=Sum('points'))['total'] or 0
 
-        # Fix division by zero: if no chores have been completed, skip penalty calculation
+        # Calculate penalty based on completion ratio
+        incomplete_penalty_setting = settings.get('incomplete_chores_penalty', 0)
+        if incomplete_penalty_setting <= 0:
+            return  # No penalty configured
+        
+        # Convert to Decimal to avoid type errors with Decimal fields
+        from decimal import Decimal
+        penalty_multiplier = Decimal(str(incomplete_penalty_setting)) / 100
+        
         if complete_chores_sum == 0:
-            # If no chores have been completed at all, there's no basis for penalty calculation
-            # Just apply penalty for incomplete chores without the completion ratio
-            penalty_multiplier = settings['incomplete_chores_penalty'] / 100
-            incomplete_chores_penalty = penalty_multiplier * incomplete_chores_sum
-            penalty = 100  # 100% penalty since no chores were completed
-            
-            models.PointLog.objects.create(
-                user=child, 
-                points_change=-(incomplete_chores_penalty + penalised_chores_sum), 
-                penalty=penalty,
-                reason='Incomplete Chores Penalty (No chores completed)',
-                chore='', 
-                approver=approver
-            )
-
-            updated_points = child.points_balance - incomplete_chores_penalty
-            updated_points -= penalised_chores_sum
-            models.User.objects.filter(pk=child.pk).update(points_balance=updated_points)
+            # No chores completed - apply 100% penalty
+            completion_ratio = 0
+            penalty = 100
+            reason = 'Incomplete Chores Penalty (No chores completed)'
         else:
-            penalty_multiplier = settings['incomplete_chores_penalty'] / 100
-            penalty = (1 - completed_by_child_sum / complete_chores_sum) * penalty_multiplier * 100
+            # Calculate penalty based on completion ratio
+            completion_ratio = Decimal(str(completed_by_child_sum)) / Decimal(str(complete_chores_sum))
+            penalty = (Decimal('1') - completion_ratio) * penalty_multiplier * Decimal('100')
+            reason = 'Incomplete Chores Penalty'
+        
+        # Calculate penalty amount
+        incomplete_chores_penalty = penalty_multiplier * incomplete_chores_sum * (Decimal('1') - completion_ratio)
+        total_penalty = incomplete_chores_penalty + penalised_chores_sum
+        
+        # Create point log entry
+        models.PointLog.objects.create(
+            user=child, 
+            points_change=-total_penalty, 
+            penalty=penalty,
+            reason=reason,
+            chore='', 
+            approver=approver
+        )
 
-            incomplete_chores_penalty = penalty_multiplier * incomplete_chores_sum * (1 - completed_by_child_sum / complete_chores_sum)
-
-            models.PointLog.objects.create(
-                user=child, 
-                points_change=-(incomplete_chores_penalty + penalised_chores_sum), 
-                penalty=penalty,
-                reason='Incomplete Chores Penalty',
-                chore='', 
-                approver=approver
-            )
-
-            updated_points = child.points_balance - incomplete_chores_penalty
-            updated_points -= penalised_chores_sum
-            models.User.objects.filter(pk=child.pk).update(points_balance=updated_points)
+        # Update user's points balance
+        updated_points = child.points_balance - total_penalty
+        models.User.objects.filter(pk=child.pk).update(points_balance=updated_points)
         
     return
 
