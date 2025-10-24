@@ -208,7 +208,7 @@
                 <tbody>
                     {% for child in children %}
                     <tr>
-                        <td>{{ child.username }}</td>
+                        <td>{{ child.username|title }}</td>
                         <td>{{ child.points_balance }}</td>
                         <td>{{ child.pocket_money }}</td>
                         <td>🏆{{ child.place_1 }} 🥈{{ child.place_2 }} 🥉{{ child.place_3 }}</td>
@@ -254,7 +254,7 @@
                             <td>{{ point_log.points_change }}</td>
                             <td>{{ point_log.penalty }} %</td>
                             <td><pre>{{ point_log.reason }}</pre></td>
-                            <td>{% if point_log.approver %}{{ point_log.approver.username }}{% else %}-{% endif %}</td>
+                            <td>{% if point_log.approver %}{{ point_log.approver.username|title }}{% else %}-{% endif %}</td>
                         </tr>
                         {% endfor %}
                     </tbody>
