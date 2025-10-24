@@ -244,6 +244,7 @@ code {
     padding: 10px;
     padding-left: 15px;
     padding-right: 15px;
+    display: block; /* Ensure anchors styled as innerBlock are full-width blocks */
     text-align: center;
     color: #ffffff;
     text-decoration: none;
