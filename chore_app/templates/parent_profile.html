@@ -31,7 +31,7 @@
                             {% csrf_token %}
                             <div class="innerBlock" onclick="this.parentElement.submit()" style="width: 100%;">
                                 <div class="buttonContainer">
-                                    <div class="choreLeft">{{ chore_claim.user }}</div>
+                                    <div class="choreLeft">{{ chore_claim.user|title }}</div>
                                     <div>
                                         {{ chore_claim.chore_name }} 
                                         <div class="small-text description">
