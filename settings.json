@@ -30,15 +30,6 @@
         "model": "chore_app.Settings",
         "pk": 4,
         "fields": {
-            "key": "bonus_end_time",
-            "name": "Daily Bonus End Time (in Hours)",
-            "value": 14
-        }
-    },
-    {
-        "model": "chore_app.Settings",
-        "pk": 5,
-        "fields": {
             "key": "bonus_percent",
             "name": "Daily Bonus Percentage",
             "value": 50
@@ -46,7 +37,7 @@
     },
     {
         "model": "chore_app.Settings",
-        "pk": 6,
+        "pk": 5,
         "fields": {
             "key": "point_value",
             "name": "Cents per Point",
@@ -55,7 +46,7 @@
     },
     {
         "model": "chore_app.Settings",
-        "pk": 7,
+        "pk": 6,
         "fields": {
             "key": "leaderboard_awards",
             "name": "Enable Leaderboard Awards, 1st Place Points",
@@ -64,7 +55,7 @@
     },
     {
         "model": "chore_app.Settings",
-        "pk": 8,
+        "pk": 7,
         "fields": {
             "key": "incomplete_chores_penalty",
             "name": "Incomplete Chores Penalty Percentage",
@@ -73,13 +64,14 @@
     },
     {
         "model": "chore_app.Settings",
-        "pk": 9,
+        "pk": 8,
         "fields": {
             "key": "auto_approve",
             "name": "Automatically approve pending chores (in percentage of points.  < 0 to disable)",
             "value": 100
         }
     },
+    
     {
         "model": "chore_app.Text",
         "pk": 1,

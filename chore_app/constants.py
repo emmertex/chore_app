@@ -8,7 +8,6 @@ POINT_VALUE_MULTIPLIER = 1
 
 # Time constants
 EARLY_BONUS_START_HOUR = 5
-BONUS_END_TIME_DEFAULT = 14
 
 # Pagination constants
 POINT_LOGS_PER_PAGE = 20
