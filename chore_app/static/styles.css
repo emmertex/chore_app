@@ -290,35 +290,35 @@ code {
 .innerBlock.v0 {
     overflow: hidden;
     animation: flashLine 2s infinite;
-    background: linear-gradient(70deg, transparent, gold 40px, transparent, transparent);
+    background-image: linear-gradient(70deg, transparent, gold 40px, transparent, transparent);
     background-size: 200% auto;
 }
 
 .innerBlock.v1 {
     overflow: hidden;
     animation: flashLine 2s infinite;
-    background: linear-gradient(70deg, transparent, rgb(150, 150, 150) 40px, transparent, transparent);
+    background-image: linear-gradient(70deg, transparent, rgb(150, 150, 150) 40px, transparent, transparent);
     background-size: 200% auto;
 }
 
 .innerBlock.v2 {
     overflow: hidden;
     animation: flashLine 2s infinite;
-    background: linear-gradient(70deg, transparent, rgb(255, 155, 84) 40px, transparent, transparent);
+    background-image: linear-gradient(70deg, transparent, rgb(255, 155, 84) 40px, transparent, transparent);
     background-size: 200% auto;
 }
 
 .innerBlock.approved {
     overflow: hidden;
     animation: flashLine 2s infinite;
-    background: linear-gradient(70deg, transparent, rgb(0, 255, 0) 40px, transparent, transparent);
+    background-image: linear-gradient(70deg, transparent, rgb(0, 255, 0) 40px, transparent, transparent);
     background-size: 200% auto;
 }
 
 .innerBlock.penalised {
     overflow: hidden;
     animation: flashLine 2s infinite;
-    background: linear-gradient(70deg, transparent, rgb(255, 0, 0) 40px, transparent, transparent);
+    background-image: linear-gradient(70deg, transparent, rgb(255, 0, 0) 40px, transparent, transparent);
     background-size: 200% auto;
 }
 
