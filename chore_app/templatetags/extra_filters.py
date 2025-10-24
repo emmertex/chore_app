@@ -24,8 +24,8 @@ def abs_filter(value):
     except (ValueError, TypeError):
         return str(int(value))
 
-@register.filter(name='format_username')
-def format_username(value):
+@register.filter(name='capitalize_username')
+def capitalize_username(value):
     """Format username with first letter capitalized and rest lowercase"""
     if not value:
         return value

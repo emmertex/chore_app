@@ -2,7 +2,7 @@
 <html lang="en">
 
 <head>
-    <title>{{ user.username|format_username }}'s Dashboard</title>
+    <title>{{ user.username|capitalize_username }}'s Dashboard</title>
     <meta http-equiv="refresh" content="60">
     {% load static %}
     <link rel="stylesheet" href="{% static 'styles.css' %}">
@@ -16,7 +16,7 @@
         {% load extra_filters %}
 
         <div class="bigblock">
-            <h1> {{ user.username|format_username }}'s Dashboard</h1>
+            <h1> {{ user.username|capitalize_username }}'s Dashboard</h1>
         </div>
 
         {% if daily_message.enabled %}
