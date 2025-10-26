@@ -7,6 +7,67 @@
     {% load static %}
     <link rel="stylesheet" href="{% static 'styles.css' %}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        /* Toast notification styles */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            max-width: 400px;
+        }
+        
+        .toast {
+            padding: 15px 20px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            animation: slideIn 0.3s ease-out;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        
+        .toast.success {
+            background-color: #d4edda;
+            color: #155724;
+            border-left: 4px solid #28a745;
+        }
+        
+        .toast.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid #dc3545;
+        }
+        
+        .toast.info,
+        .toast.warning {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border-left: 4px solid #17a2b8;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+    </style>
 </head>
 
 <body>
@@ -17,9 +78,9 @@
         <div class="container">
 
         {% if messages %}
-        <div class="bigblock">
+        <div class="toast-container">
             {% for message in messages %}
-            <div class="innerBlock {% if message.tags == 'error' %}red{% elif message.tags == 'success' %}green{% endif %}">
+            <div class="toast {{ message.tags }}" onclick="this.style.animation='slideOut 0.3s ease-out'; setTimeout(() => this.remove(), 300);">
                 {{ message }}
             </div>
             {% endfor %}
@@ -371,6 +432,19 @@
         document.addEventListener('DOMContentLoaded', initializeChoreUnavailableModals);
         document.addEventListener('DOMContentLoaded', initializeChoreAvailableModals);
         document.addEventListener('DOMContentLoaded', initializeChoreClaimModals);
+
+        // Auto-dismiss toast notifications after 5 seconds
+        document.addEventListener('DOMContentLoaded', function() {
+            const toasts = document.querySelectorAll('.toast');
+            toasts.forEach(function(toast) {
+                setTimeout(function() {
+                    toast.style.animation = 'slideOut 0.3s ease-out';
+                    setTimeout(function() {
+                        toast.remove();
+                    }, 300);
+                }, 5000);
+            });
+        });
 
     </script>
 
