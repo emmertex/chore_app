@@ -16,6 +16,16 @@
       <div class="content-wrapper">
         <div class="container">
 
+        {% if messages %}
+        <div class="bigblock">
+            {% for message in messages %}
+            <div class="innerBlock {% if message.tags == 'error' %}red{% elif message.tags == 'success' %}green{% endif %}">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
         <div class="bigblock">
             <h1>{{ user.username|title }}'s Dashboard</h1>
         </div>

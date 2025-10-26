@@ -135,7 +135,8 @@ def apply_leaderboard_scoring(approver, children, settings):
 
 # Daily Bonus
 def apply_daily_bonus(approver, child, settings):
-    points_balance = child.points_balance
+    original_balance = child.points_balance
+    points_balance = original_balance
     pocket_money = child.pocket_money
 
     if points_balance < settings['min_points']:
@@ -145,11 +146,13 @@ def apply_daily_bonus(approver, child, settings):
         pocket_money += ((points_balance - settings['max_points']) * settings['point_value'])
         points_balance = settings['max_points']
 
-
+    # Get the actual change in points
+    points_change = points_balance - original_balance
+    
     models.User.objects.filter(pk=child.pk).update(
         points_balance=points_balance, pocket_money=pocket_money)
 
-    models.PointLog.objects.create(user=child, points_change=points_balance - child.points_balance,
+    models.PointLog.objects.create(user=child, points_change=points_change,
                                    penalty=0, reason='Daily Points', chore='', approver=approver)
     return
 
@@ -199,6 +202,9 @@ def incomplete_chore_penalty(approver, child, settings):
         incomplete_chores_penalty = penalty_multiplier * incomplete_chores_sum * (Decimal('1') - completion_ratio)
         total_penalty = incomplete_chores_penalty + penalised_chores_sum
         
+        # Refresh child object to get current balance (handles case where bonus was applied first)
+        child.refresh_from_db()
+        
         # Create point log entry
         models.PointLog.objects.create(
             user=child, 
@@ -209,9 +215,8 @@ def incomplete_chore_penalty(approver, child, settings):
             approver=approver
         )
 
-        # Update user's points balance
-        updated_points = child.points_balance - total_penalty
-        models.User.objects.filter(pk=child.pk).update(points_balance=updated_points)
+        # Update user's points balance using F() to ensure atomic operation
+        models.User.objects.filter(pk=child.pk).update(points_balance=F('points_balance') - total_penalty)
         
     return
 

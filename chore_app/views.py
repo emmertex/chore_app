@@ -723,15 +723,19 @@ def daily_action(request):
     # Check if the daily task has already been run today
     if has_run_today('chore_app.cron.nightly_action'):
         # If it has already run, redirect back to parent profile with an error message
+        django_messages.error(request, 'Daily action has already been run today.')
         return redirect('parent_profile')
     
     # Only allow parents to run the daily action
     if request.user.role != 'Parent':
+        django_messages.error(request, 'Only parents can run the daily action.')
         return redirect('child_profile')
     
     try:
         nightly_action(approver=request.user)
+        django_messages.success(request, 'Daily action completed successfully!')
     except Exception as e:
-        logger.error(f"Error in daily_action: {e}")
+        logger.error(f"Error in daily_action: {e}", exc_info=True)
+        django_messages.error(request, f'An error occurred during the daily action: {str(e)}. Please check the logs for details.')
     
     return redirect('parent_profile')
