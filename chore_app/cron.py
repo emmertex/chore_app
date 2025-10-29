@@ -161,63 +161,42 @@ def incomplete_chore_penalty(approver, child, settings):
     available_chores = models.Chore.objects.filter(available=True)
 
     if available_chores and settings['incomplete_chores_penalty'] > 0:
-        complete_chores = models.ChoreClaim.objects.filter(approved__gt=0)
-        complete_chores_sum = complete_chores.aggregate(total=Sum('approved'))['total'] or 0
-
-        completed_by_child = models.ChoreClaim.objects.filter(user=child, approved__gt=0)
-        completed_by_child_sum = completed_by_child.aggregate(total=Sum('points'))['total'] or 0
-
-        penalised_chores = models.ChoreClaim.objects.filter(approved__lt=0)
-        penalised_chores_sum = penalised_chores.aggregate(total=Sum('approved'))['total'] or 0
-        
         # Get completed chore IDs for this child
-        completed_by_child_ids = set(completed_by_child.values_list('chore_id', flat=True))
-        
-        # Calculate incomplete chores sum using aggregation
+        completed_by_child_ids = set(models.ChoreClaim.objects.filter(
+            user=child, approved__gt=0
+        ).values_list('chore_id', flat=True))
+
+        # Calculate incomplete chores sum - points from available chores not completed by this child
         incomplete_chores_sum = available_chores.exclude(
             id__in=completed_by_child_ids
         ).aggregate(total=Sum('points'))['total'] or 0
 
-        # Calculate penalty based on completion ratio
-        incomplete_penalty_setting = settings.get('incomplete_chores_penalty', 0)
-        if incomplete_penalty_setting <= 0:
-            return  # No penalty configured
-        
+        if incomplete_chores_sum == 0:
+            return  # No incomplete chores, no penalty
+
         # Convert to Decimal to avoid type errors with Decimal fields
         from decimal import Decimal
-        penalty_multiplier = Decimal(str(incomplete_penalty_setting)) / 100
-        
-        if complete_chores_sum == 0:
-            # No chores completed - apply 100% penalty
-            completion_ratio = 0
-            penalty = 100
-            reason = 'Incomplete Chores Penalty (No chores completed)'
-        else:
-            # Calculate penalty based on completion ratio
-            completion_ratio = Decimal(str(completed_by_child_sum)) / Decimal(str(complete_chores_sum))
-            penalty = (Decimal('1') - completion_ratio) * penalty_multiplier * Decimal('100')
-            reason = 'Incomplete Chores Penalty'
-        
-        # Calculate penalty amount
-        incomplete_chores_penalty = penalty_multiplier * incomplete_chores_sum * (Decimal('1') - completion_ratio)
-        total_penalty = incomplete_chores_penalty + penalised_chores_sum
-        
+        penalty_percentage = Decimal(str(settings['incomplete_chores_penalty']))
+
+        # Calculate penalty amount as percentage of incomplete chores points
+        penalty_amount = (penalty_percentage / 100) * incomplete_chores_sum
+
         # Refresh child object to get current balance (handles case where bonus was applied first)
         child.refresh_from_db()
-        
+
         # Create point log entry
         models.PointLog.objects.create(
-            user=child, 
-            points_change=-total_penalty, 
-            penalty=penalty,
-            reason=reason,
-            chore='', 
+            user=child,
+            points_change=-penalty_amount,
+            penalty=penalty_percentage,
+            reason=f'Incomplete Chores Penalty ({penalty_percentage}% of {incomplete_chores_sum} points)',
+            chore='',
             approver=approver
         )
 
         # Update user's points balance using F() to ensure atomic operation
-        models.User.objects.filter(pk=child.pk).update(points_balance=F('points_balance') - total_penalty)
-        
+        models.User.objects.filter(pk=child.pk).update(points_balance=F('points_balance') - penalty_amount)
+
     return
 
 # Automatically approve pending claimed chores
