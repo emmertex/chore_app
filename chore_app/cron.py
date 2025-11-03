@@ -94,6 +94,9 @@ def apply_leaderboard_scoring(approver, children, settings):
 
 # Daily Bonus
 def apply_daily_bonus(approver, child, settings):
+    # Refresh child object to get current balance after any penalties were applied
+    child.refresh_from_db()
+
     original_balance = child.points_balance
     points_balance = original_balance
     pocket_money = child.pocket_money
@@ -107,7 +110,7 @@ def apply_daily_bonus(approver, child, settings):
 
     # Get the actual change in points
     points_change = points_balance - original_balance
-    
+
     models.User.objects.filter(pk=child.pk).update(
         points_balance=points_balance, pocket_money=pocket_money)
 
