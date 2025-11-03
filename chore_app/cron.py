@@ -3,6 +3,7 @@ from django_cron import CronJobBase, Schedule
 from django.db.models import F, Q, Sum
 import chore_app.models as models
 import chore_app.views as views
+from chore_app.utils import has_run_today, nightly_action
 from datetime import datetime
 
 
@@ -33,49 +34,7 @@ class NightlyAction(CronJobBase):
         else:
             logging.debug("Nightly job has already been run today; skipping execution.")
 
-def has_run_today(job_code):
-    last_run = models.RunLog.objects.filter(job_code=job_code).order_by('-run_date').first()
-    if not last_run:
-        return False
-    current_date = datetime.now().date()
-    return last_run.run_date == current_date
 
-def nightly_action(approver=None):
-
-    try:
-        children = models.User.objects.filter(role='Child')
-        settings = {
-            setting['key']: setting['value'] for setting in models.Settings.objects.values('key', 'value')}
-    except Exception as e:
-        logging.error(e)
-        raise
-
-    auto_approve(approver, settings)
-
-    # Process each child's incomplete chores penalties and bonusses
-    for child in children:
-        try:
-            incomplete_chore_penalty(approver=approver, child=child, settings=settings)
-            apply_daily_bonus(approver=approver, child=child, settings=settings)
-        except Exception as e:
-            logging.error(e)
-            raise
-
-    try:
-        apply_leaderboard_scoring(
-            approver=approver, children=children, settings=settings)
-    except Exception as e:
-        logging.error(e) 
-        raise
-
-    # Reset all chores
-    try:
-        reset_daily_chores()
-    except Exception as e:
-        logging.error(e)
-        raise
-
-    return
 
 
 
@@ -204,10 +163,72 @@ def auto_approve(approver, settings):
     if settings['auto_approve'] >= 0:
         unapproved_chores = models.ChoreClaim.objects.filter(approved=0).select_related('chore')
         penalty = 100 - settings['auto_approve']
-        
+
         for chore_claim in unapproved_chores:
-            views.approve_chore_claim(None, chore_claim.pk, penalty, auto=True)
+            # Call approval logic directly, bypassing view decorators
+            _approve_chore_claim_direct(chore_claim.pk, penalty, approver)
     return
+
+
+def _approve_chore_claim_direct(chore_claim_pk, penalty, approver):
+    """
+    Direct approval of chore claims for auto-approval, bypassing view decorators.
+    """
+    from django.db import transaction
+    from decimal import Decimal
+
+    try:
+        with transaction.atomic():
+            # Validate penalty is within acceptable range
+            if penalty < 0 or penalty > 100:
+                logging.error(f"Invalid penalty percentage: {penalty}")
+                return
+
+            chore_claim = models.ChoreClaim.objects.select_for_update().get(pk=chore_claim_pk)
+
+            # Check if already processed
+            if chore_claim.approved != 0:
+                logging.warning(f"Chore claim {chore_claim_pk} already processed")
+                return
+
+            # Convert penalty to Decimal to avoid type errors
+            penalty_decimal = Decimal(str(penalty))
+            points_awarded = chore_claim.points - (chore_claim.points * (penalty_decimal / 100))
+
+            # Validate points_awarded is not negative
+            if points_awarded < 0:
+                points_awarded = 0
+
+            # Create point log entry
+            models.PointLog.objects.create(
+                user=chore_claim.user,
+                points_change=points_awarded,
+                penalty=penalty,
+                reason='Approved',
+                chore=chore_claim.chore_name,
+                approver=approver
+            )
+
+            # Update user's points balance
+            user = models.User.objects.select_for_update().get(pk=chore_claim.user.pk)
+            user.points_balance += points_awarded
+            user.save()
+
+            # Update chore claim
+            chore_claim.approved = points_awarded
+            chore_claim.save()
+
+            # For non-daily chores, ensure they remain unavailable after completion
+            if chore_claim.chore and not chore_claim.chore.daily:
+                chore_claim.chore.available = False
+                chore_claim.chore.save()
+
+    except models.ChoreClaim.DoesNotExist:
+        logging.error(f"Chore claim {chore_claim_pk} not found")
+    except models.User.DoesNotExist:
+        logging.error(f"User not found for chore claim {chore_claim_pk}")
+    except Exception as e:
+        logging.error(f"Error in _approve_chore_claim_direct: {e}")
 
 # Reset Daily Chores to Available, and clear claimed chores
 def reset_daily_chores():
