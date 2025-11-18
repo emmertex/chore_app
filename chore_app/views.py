@@ -344,12 +344,12 @@ def toggle_availability(request, pk):
 def convert_points_to_money(request, pk):
     if request.user.role != 'Child' or request.user.pk != pk:
         return redirect('child_profile')
-    
+
     if request.method == 'POST':
         try:
             with transaction.atomic():
                 user = models.User.objects.select_for_update().get(pk=pk)
-                
+
                 # Get required settings
                 try:
                     max_points_setting = models.Settings.objects.get(key='max_points')
@@ -358,41 +358,49 @@ def convert_points_to_money(request, pk):
                     logger.error(f"Required setting not found: {e}")
                     django_messages.error(request, 'System configuration error. Please contact administrator.')
                     return redirect('child_profile')
-                
-                # Validate user has enough points
+
+                original_balance = user.points_balance
                 minimum_points = max_points_setting.value / 2
+
+                logger.info(f"Convert points to money for {user.username}: original_balance={original_balance}, minimum_points={minimum_points}, conversion_rate={POINTS_TO_MONEY_CONVERSION_RATE}")
+
+                # Validate user has enough points
                 if user.points_balance < minimum_points:
+                    logger.warning(f"Insufficient points for conversion: {user.points_balance} < {minimum_points}")
                     django_messages.warning(request, f'You need at least {minimum_points} points to convert to money.')
                     return redirect('child_profile')
-                
+
                 # Validate user has enough points for conversion
                 if user.points_balance < POINTS_TO_MONEY_CONVERSION_RATE:
+                    logger.warning(f"Insufficient points for conversion rate: {user.points_balance} < {POINTS_TO_MONEY_CONVERSION_RATE}")
                     django_messages.warning(request, f'You need at least {POINTS_TO_MONEY_CONVERSION_RATE} points to convert.')
                     return redirect('child_profile')
-                
+
                 # Calculate money amount
                 money_amount = POINTS_TO_MONEY_CONVERSION_RATE * point_value_setting.value
-                
+
                 # Update user's balance
                 user.pocket_money += money_amount
                 user.points_balance -= POINTS_TO_MONEY_CONVERSION_RATE
                 user.save()
-                
+
+                logger.info(f"After conversion for {user.username}: new_balance={user.points_balance}, added_money={money_amount}")
+
                 # Create point log entry
                 models.PointLog.objects.create(
-                    user=user, 
-                    points_change=-POINTS_TO_MONEY_CONVERSION_RATE, 
+                    user=user,
+                    points_change=-POINTS_TO_MONEY_CONVERSION_RATE,
                     penalty=0,
-                    reason='Conversion to Pocket Money', 
-                    chore='', 
+                    reason='Conversion to Pocket Money',
+                    chore='',
                     approver=user
                 )
                 django_messages.success(request, f'Successfully converted {POINTS_TO_MONEY_CONVERSION_RATE} points to ${money_amount:.2f} pocket money!')
-                
+
         except (models.User.DoesNotExist, Exception) as e:
             logger.error(f"Error in convert_points_to_money: {e}")
             django_messages.error(request, 'Error converting points to money.')
-    
+
     return redirect('child_profile')
 
 
@@ -668,18 +676,23 @@ def reject_chore_claim(request, pk):
 def point_adjustment(request, pk):
     if request.user.role != 'Parent':
         return redirect('child_profile')
-    
+
     if request.method == 'POST':
         form = forms.PointAdjustmentForm(request.POST)
         if form.is_valid():
             user = models.User.objects.get(pk=pk)
+            points_change = form.cleaned_data['points_change']
+            original_balance = user.points_balance
+            new_balance = original_balance + points_change
+
+            logger.info(f"Point adjustment for {user.username}: original_balance={original_balance}, change={points_change}, new_balance={new_balance}")
 
             point_log = form.save(commit=False)
             point_log.user = user
             point_log.approver = request.user
             point_log.save()
 
-            user.points_balance += form.cleaned_data['points_change']
+            user.points_balance += points_change
             user.save()
             return redirect('parent_profile')
     else:

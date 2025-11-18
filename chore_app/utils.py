@@ -98,8 +98,12 @@ def nightly_action(approver=None):
         children = User.objects.filter(role='Child')
         settings = {
             setting['key']: setting['value'] for setting in Settings.objects.values('key', 'value')}
+
+        # Log initial balances
+        for child in children:
+            logging.info(f"Initial balance for {child.username}: points={child.points_balance}, pocket_money={child.pocket_money}")
+
     except Exception as e:
-        import logging
         logging.error(e)
         raise
 
@@ -111,7 +115,6 @@ def nightly_action(approver=None):
             incomplete_chore_penalty(approver=approver, child=child, settings=settings)
             apply_daily_bonus(approver=approver, child=child, settings=settings)
         except Exception as e:
-            import logging
             logging.error(e)
             raise
 
@@ -119,7 +122,6 @@ def nightly_action(approver=None):
         apply_leaderboard_scoring(
             approver=approver, children=children, settings=settings)
     except Exception as e:
-        import logging
         logging.error(e)
         raise
 
@@ -127,7 +129,11 @@ def nightly_action(approver=None):
     try:
         reset_daily_chores()
     except Exception as e:
-        import logging
         logging.error(e)
         raise
+
+    # Log final balances
+    children_final = User.objects.filter(role='Child')
+    for child in children_final:
+        logging.info(f"Final balance for {child.username}: points={child.points_balance}, pocket_money={child.pocket_money}")
 

@@ -145,6 +145,9 @@ def incomplete_chore_penalty(approver, child, settings):
 
         # Refresh child object to get current balance (handles case where bonus was applied first)
         child.refresh_from_db()
+        original_balance = child.points_balance
+
+        logging.info(f"Incomplete chore penalty for {child.username}: original_balance={original_balance}, penalty_amount={penalty_amount}, incomplete_sum={incomplete_chores_sum}")
 
         # Create point log entry
         models.PointLog.objects.create(
@@ -158,6 +161,10 @@ def incomplete_chore_penalty(approver, child, settings):
 
         # Update user's points balance using F() to ensure atomic operation
         models.User.objects.filter(pk=child.pk).update(points_balance=F('points_balance') - penalty_amount)
+
+        # Log the new balance
+        child.refresh_from_db()
+        logging.info(f"After penalty for {child.username}: new_balance={child.points_balance}")
 
     return
 
