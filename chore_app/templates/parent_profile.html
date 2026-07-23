@@ -264,7 +264,7 @@
 
 
         <div class="block">
-            <h3> Childrens Points </h3>
+            <h3> Children's Points </h3>
             <table>
                 <thead>
                     <tr>
@@ -281,7 +281,7 @@
                     <tr>
                         <td>{{ child.username|title }}</td>
                         <td>{{ child.points_balance }}</td>
-                        <td>{{ child.pocket_money }}</td>
+                        <td>${{ child.pocket_money|div:100 }}</td>
                         <td>🏆{{ child.place_1 }} 🥈{{ child.place_2 }} 🥉{{ child.place_3 }}</td>
                         <td>
                             {% for chore in chore_points %}

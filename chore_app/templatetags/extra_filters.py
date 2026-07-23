@@ -6,23 +6,26 @@ register = template.Library()
 @register.filter(name='halve')
 def halve(value):
     try:
-        return str(int(value / 2))
+        return str(int(value) // 2)
     except (ValueError, TypeError):
-        return str(int(value))
+        return str(value)
+
 
 @register.filter(name='fifth')
 def fifth(value):
     try:
-        return str(int(value / 5))
+        return str(int(value) // 5)
     except (ValueError, TypeError):
-        return str(int(value))
+        return str(value)
+
 
 @register.filter(name='abs_filter')
 def abs_filter(value):
     try:
-        return str(int(abs(value)))
+        return str(abs(int(value)))
     except (ValueError, TypeError):
-        return str(int(value))
+        return str(value)
+
 
 @register.filter(name='capitalize_username')
 def capitalize_username(value):
@@ -30,3 +33,11 @@ def capitalize_username(value):
     if not value:
         return value
     return value.capitalize()
+
+@register.filter(name='div')
+def div(value, arg):
+    """Divide value by arg"""
+    try:
+        return str(int(value) // int(arg))
+    except (ValueError, TypeError, ZeroDivisionError):
+        return str(value)

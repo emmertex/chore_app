@@ -68,13 +68,7 @@
                   <label for="{{ form.assigned_children.id_for_label }}">{{ form.assigned_children.label }}:</label>
                 </p>
                 <div style="margin-left: 20px;">
-                  {% for child in children %}
-                    <label>
-                      <input type="checkbox" name="assigned_children" value="{{ child.id }}" 
-                             {% if child in chore.assigned_children.all %}checked{% endif %}>
-                      {{ child.username }}
-                    </label><br>
-                  {% endfor %}
+                  {{ form.assigned_children }}
                 </div>
               </div>
               

@@ -71,7 +71,7 @@ class PocketMoneyAdjustmentForm(forms.ModelForm):
         model = User
         fields = ['pocket_money']
         labels = {
-            'pocket_money': 'Adjust Pocket Money'
+            'pocket_money': 'Adjust Pocket Money (in dollars, e.g. 5 for $5)'
         }
         widgets = {
             'pocket_money': forms.NumberInput(attrs={'type': 'number', 'step': 'any'})

@@ -8,7 +8,9 @@ from django.contrib import messages as django_messages
 from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import F, Q, Sum
+from django.http import HttpResponse
 from django.shortcuts import redirect, render
+from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 import chore_app.forms as forms
@@ -29,7 +31,7 @@ logger = logging.getLogger(__name__)
 class CustomUserCreationForm(UserCreationForm):
     class Meta:
         model = UserModel
-        fields = ('username', 'email', 'role', 'points_balance')
+        fields = ('username', 'email', 'role')
 
 
 def register(request):
@@ -125,7 +127,7 @@ def edit_text(request, pk):
             form = forms.EditTextForm(request.POST, instance=text)
             if form.is_valid():
                 form.save()
-                return redirect('parent_profile')
+                return redirect('messages')
         else:
             form = forms.EditTextForm(instance=text)
         return render(request, 'edit_text.html', {'form': form, 'text': text})
@@ -144,7 +146,7 @@ def parent_profile(request):
     page_obj = paginator.get_page(page_number)
 
     chore_points = models.PointLog.objects.filter(
-        date_recorded__date=datetime.date.today()
+        date_recorded__date=timezone.localdate()
     ).exclude(
         chore=''
     ).values(
@@ -171,7 +173,7 @@ def parent_profile(request):
 
 @login_required
 def child_profile(request):
-    current_time = datetime.datetime.now().time()
+    current_time = timezone.localtime().time()
     current_hour = current_time.hour
 
     point_logs = models.PointLog.objects.filter(
@@ -181,7 +183,7 @@ def child_profile(request):
     page_obj = paginator.get_page(page_number)
 
     chore_points = models.PointLog.objects.filter(
-        date_recorded__date=datetime.date.today()
+        date_recorded__date=timezone.localdate()
     ).exclude(
         chore=''
     ).values(
@@ -257,21 +259,24 @@ def child_profile(request):
 
     settings = {setting.key: setting.value for setting in models.Settings.objects.all()}
 
+    claimed_chore_ids = set(claimed_chores.exclude(chore__isnull=True).values_list('chore_id', flat=True))
+
     context = {
-        'minimum_points': settings['max_points'] / 2,
+        'minimum_points': settings.get('max_points', 0) / 2,
         'pocket_money': request.user.pocket_money / 100,
-        'pocket_money_amount': settings['point_value'],
+        'pocket_money_amount': settings.get('point_value', 0),
         'points': request.user.points_balance,
         'chores': filtered_chores,
         'chore_points': chore_points,
         'point_logs': page_obj,  # Use the paginated page_obj instead of the original queryset
         'claimed_chores': claimed_chores,
+        'claimed_chore_ids': claimed_chore_ids,
         'future_chores': future_chores,
         'missed_chores': missed_chores,
-        'max_points': settings['max_points'],
-        'min_points': settings['min_points'],
-        'leaderboard_awards': settings['leaderboard_awards'],
-        'incomplete_chores_penalty': settings['incomplete_chores_penalty'],
+        'max_points': settings.get('max_points', 0),
+        'min_points': settings.get('min_points', 0),
+        'leaderboard_awards': settings.get('leaderboard_awards', 0),
+        'incomplete_chores_penalty': settings.get('incomplete_chores_penalty', 0),
         'daily_message': models.Text.objects.get(key='daily_message')
     }
     response = render(request, 'child_profile.html', context)
@@ -326,16 +331,15 @@ def toggle_availability(request, pk):
     if request.user.role != 'Parent':
         return redirect('child_profile')
     
-    if request.method == 'POST':
-        try:
-            chore = models.Chore.objects.get(pk=pk)
-            chore.available = not chore.available
-            chore.save()
-            status = "available" if chore.available else "unavailable"
-            django_messages.success(request, f'Chore is now {status}!')
-        except (models.Chore.DoesNotExist, Exception) as e:
-            logger.error(f"Error in toggle_availability: {e}")
-            django_messages.error(request, 'Error updating chore availability.')
+    try:
+        chore = models.Chore.objects.get(pk=pk)
+        chore.available = not chore.available
+        chore.save()
+        status = "available" if chore.available else "unavailable"
+        django_messages.success(request, f'Chore is now {status}!')
+    except (models.Chore.DoesNotExist, Exception) as e:
+        logger.error(f"Error in toggle_availability: {e}")
+        django_messages.error(request, 'Error updating chore availability.')
     return redirect('parent_profile')
 
 
@@ -410,12 +414,11 @@ def delete_chore(request, pk):
     if request.user.role != 'Parent':
         return redirect('child_profile')
     
-    if request.method == 'POST':
-        try:
-            chore = models.Chore.objects.get(pk=pk)
-            chore.delete()
-        except (models.Chore.DoesNotExist, Exception) as e:
-            logger.error(f"Error in delete_chore: {e}")
+    try:
+        chore = models.Chore.objects.get(pk=pk)
+        chore.delete()
+    except (models.Chore.DoesNotExist, Exception) as e:
+        logger.error(f"Error in delete_chore: {e}")
     return redirect('parent_profile')
 
 @login_required
@@ -424,17 +427,21 @@ def penalise_chore(request, pk):
     if request.user.role != 'Parent':
         return redirect('child_profile')
     
-    if request.method == 'POST':
-        try:
-            chore = models.Chore.objects.get(pk=pk)
-            chore.available = False
-            chore.save()
-            for child in models.User.objects.filter(role='Child'):
-                models.ChoreClaim.objects.create(
-                    chore=chore, user=child, chore_name=chore.name, points=(-chore.points), approved=(-chore.points), comment='Penalty for incomplete chore'
-                )
-        except (models.Chore.DoesNotExist, Exception) as e:
-            logger.error(f"Error in penalise_chore: {e}")
+    try:
+        chore = models.Chore.objects.get(pk=pk)
+        chore.available = False
+        chore.save()
+        # Only penalise children who are assigned to this chore
+        if chore.assignment_type in ('any_selected', 'all_selected'):
+            children = chore.assigned_children.all()
+        else:
+            children = models.User.objects.filter(role='Child')
+        for child in children:
+            models.ChoreClaim.objects.create(
+                chore=chore, user=child, chore_name=chore.name, points=(-chore.points), approved=(-chore.points), comment='Penalty for incomplete chore'
+            )
+    except (models.Chore.DoesNotExist, Exception) as e:
+        logger.error(f"Error in penalise_chore: {e}")
     return redirect('parent_profile')
 
 
@@ -442,7 +449,7 @@ def penalise_chore(request, pk):
 @require_POST
 def claim_chore(request, pk):
     try:
-        current_time = datetime.datetime.now().time()
+        current_time = timezone.localtime().time()
         
         with transaction.atomic():
             # Use select_for_update to prevent race conditions
@@ -479,8 +486,8 @@ def claim_chore(request, pk):
                 return redirect('child_profile')
             
             # Calculate points and bonus
-            if current_time <= datetime.time(chore.bonus_end_time) \
-                    and current_time > datetime.time(EARLY_BONUS_START_HOUR) \
+            if current_time < datetime.time(chore.bonus_end_time) \
+                    and current_time >= datetime.time(EARLY_BONUS_START_HOUR) \
                     and chore.early_bonus:
                 try:
                     bonus_percent = models.Settings.objects.get(key='bonus_percent').value
@@ -645,7 +652,6 @@ def approve_chore_claim(request, pk, penalty, auto=False):
         return redirect('parent_profile')
     else:
         # For auto mode, return a simple success response
-        from django.http import HttpResponse
         return HttpResponse("OK")
 
 @login_required
@@ -654,21 +660,20 @@ def reject_chore_claim(request, pk):
     if request.user.role != 'Parent':
         return redirect('child_profile')
     
-    if request.method == 'POST':
-        try:
-            choreClaim = models.ChoreClaim.objects.get(pk=pk)
-            if choreClaim.chore:
-                try:
-                    chore = models.Chore.objects.get(pk=choreClaim.chore.pk)
-                    chore.available = True
-                    chore.save()
-                except (models.Chore.DoesNotExist, Exception) as e:
-                    logger.error(f"Error in reject_chore_claim (chore lookup): {e}")
-            models.PointLog.objects.create(user=choreClaim.user, points_change=0, penalty=REJECTION_PENALTY,
-                                           reason='Rejected', chore=choreClaim.chore_name, approver=request.user)
-            choreClaim.delete()
-        except (models.ChoreClaim.DoesNotExist, Exception) as e:
-            logger.error(f"Error in reject_chore_claim: {e}")
+    try:
+        choreClaim = models.ChoreClaim.objects.get(pk=pk)
+        if choreClaim.chore:
+            try:
+                chore = models.Chore.objects.get(pk=choreClaim.chore.pk)
+                chore.available = True
+                chore.save()
+            except (models.Chore.DoesNotExist, Exception) as e:
+                logger.error(f"Error in reject_chore_claim (chore lookup): {e}")
+        models.PointLog.objects.create(user=choreClaim.user, points_change=0, penalty=REJECTION_PENALTY,
+                                       reason='Rejected', chore=choreClaim.chore_name, approver=request.user)
+        choreClaim.delete()
+    except (models.ChoreClaim.DoesNotExist, Exception) as e:
+        logger.error(f"Error in reject_chore_claim: {e}")
     return redirect('parent_profile')
 
 
@@ -709,8 +714,8 @@ def pocket_money_adjustment(request, pk):
         form = forms.PocketMoneyAdjustmentForm(request.POST)
         if form.is_valid():
             user = models.User.objects.get(pk=pk)
-
-            user.pocket_money += form.cleaned_data['pocket_money']
+            # Convert dollars to cents for storage (pocket_money is stored in cents)
+            user.pocket_money += form.cleaned_data['pocket_money'] * 100
             user.save()
             return redirect('parent_profile')
     else:

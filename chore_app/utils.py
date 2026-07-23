@@ -5,7 +5,7 @@ Utility functions for the chore application.
 import logging
 from django.http import Http404
 from django.shortcuts import redirect
-from datetime import datetime
+from django.utils import timezone
 
 logger = logging.getLogger(__name__)
 
@@ -70,7 +70,7 @@ def has_run_today(job_code):
     last_run = RunLog.objects.filter(job_code=job_code).order_by('-run_date').first()
     if not last_run:
         return False
-    current_date = datetime.now().date()
+    current_date = timezone.localdate()
     return last_run.run_date == current_date
 
 

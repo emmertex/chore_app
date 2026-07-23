@@ -2,9 +2,8 @@ import logging
 from django_cron import CronJobBase, Schedule
 from django.db.models import F, Q, Sum
 import chore_app.models as models
-import chore_app.views as views
 from chore_app.utils import has_run_today, nightly_action
-from datetime import datetime
+from django.utils import timezone
 
 
 class NightlyAction(CronJobBase):
@@ -19,7 +18,7 @@ class NightlyAction(CronJobBase):
 
     def mark_as_run(self):
         models.RunLog.objects.update_or_create(
-            job_code=self.code, defaults={'run_date': datetime.now().date()})
+            job_code=self.code, defaults={'run_date': timezone.localdate()})
 
     def do(self):
         if not has_run_today(self.code):
@@ -42,7 +41,7 @@ class NightlyAction(CronJobBase):
 def apply_leaderboard_scoring(approver, children, settings):
 
     # Sum all the points each child earned from chores today
-    chore_points = models.PointLog.objects.filter(date_recorded__date=datetime.now().date()).exclude(
+    chore_points = models.PointLog.objects.filter(date_recorded__date=timezone.localdate()).exclude(
         chore='').values('user', 'user__username').annotate(total_points=Sum('points_change')).order_by('-total_points')
 
     # Create text for the Leaderboard
@@ -170,7 +169,7 @@ def incomplete_chore_penalty(approver, child, settings):
 
 # Automatically approve pending claimed chores
 def auto_approve(approver, settings):
-    if settings['auto_approve'] >= 0:
+    if settings.get('auto_approve', 0) > 0:
         unapproved_chores = models.ChoreClaim.objects.filter(approved=0).select_related('chore')
         penalty = 100 - settings['auto_approve']
 
