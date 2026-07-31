@@ -11,15 +11,18 @@ fi
 
 PYTHON="./venv/bin/python"
 
-if ! command -v screen &>/dev/null; then
-    echo "Screen is not installed. Running in the foreground..."
+# Kill existing session if running
+tmux kill-session -t chore_app 2>/dev/null
+
+if ! command -v tmux &>/dev/null; then
+    echo "Tmux is not installed. Running in the foreground..."
     exec $PYTHON manage.py runserver 0.0.0.0:8190
 else
-    screen -d -m -S "chore_app" $PYTHON manage.py runserver 0.0.0.0:8190
+    tmux new-session -d -s chore_app "$PYTHON manage.py runserver 0.0.0.0:8190"
     if [ $? -eq 0 ]; then
-        echo "Running chore_app in Screen. Run 'screen -r chore_app' to attach."
+        echo "Running chore_app in Tmux session 'chore_app'. Run 'tmux attach -t chore_app' to view logs."
     else
-        echo "There was an error starting chore_app in Screen."
+        echo "There was an error starting chore_app in Tmux."
         exit 1
     fi
 fi
