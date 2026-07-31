@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Edit Reward</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'styles.css' %}" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  </head>
+
+  <body>
+    <div class="page-container">
+      <div class="content-wrapper">
+        <div class="form-block">
+          <h1>Edit Reward</h1>
+          <form method="post">
+            {% csrf_token %}
+            <div class="form-fields">
+              <p>
+                <label for="{{ form.name.id_for_label }}">{{ form.name.label }}:</label>
+                {{ form.name }}
+              </p>
+
+              <p>
+                <label for="{{ form.description.id_for_label }}">{{ form.description.label }}:</label>
+                {{ form.description }}
+              </p>
+
+              <p>
+                <label for="{{ form.points_cost.id_for_label }}">{{ form.points_cost.label }}:</label>
+                {{ form.points_cost }}
+              </p>
+
+              <p>
+                <label for="{{ form.available.id_for_label }}">{{ form.available.label }}:</label>
+                {{ form.available }}
+              </p>
+
+              <div class="form-group">
+                <strong>{{ form.availability_type.label }}</strong>
+                <div style="margin-top: 8px;">
+                  {% for radio in form.availability_type %}
+                    <label style="display: inline-flex; align-items: center; gap: 6px; margin-right: 16px; cursor: pointer;">
+                      {{ radio.tag }}
+                      {{ radio.choice_label }}
+                    </label>
+                  {% endfor %}
+                </div>
+              </div>
+            </div>
+            <div class="form-actions">
+              <button type="submit">Save Changes</button>
+              <a href="{% url 'rewards_list' %}" class="button">Cancel</a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

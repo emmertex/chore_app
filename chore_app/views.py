@@ -1,31 +1,42 @@
-import datetime
 import logging
+from decimal import Decimal
 
-from django.contrib.auth import authenticate, get_user_model, login, logout
+from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib import messages as django_messages
 from django.core.paginator import Paginator
 from django.db import transaction
-from django.db.models import F, Q, Sum
-from django.http import HttpResponse
+from django.db.models import Q
 from django.shortcuts import redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 import chore_app.forms as forms
 import chore_app.models as models
-from chore_app.utils import has_run_today, safe_get_object_or_404, nightly_action
+from chore_app.utils import safe_get_object_or_404
 from chore_app.constants import (
-    POINTS_TO_MONEY_CONVERSION_RATE, POINT_VALUE_MULTIPLIER, EARLY_BONUS_START_HOUR,
-    POINT_LOGS_PER_PAGE, CHILD_POINT_LOGS_PER_PAGE, MAX_PENALTY_PERCENTAGE,
-    REJECTION_PENALTY, ALWAYS_AVAILABLE_TIME
+    DAILY_MESSAGE_KEY, EARLY_BONUS_PERCENT, EARLY_BONUS_START_HOUR,
+    POINT_LOGS_PER_PAGE, CHILD_POINT_LOGS_PER_PAGE
 )
 
 UserModel = get_user_model()
 
 # Set up logging
 logger = logging.getLogger(__name__)
+
+
+def early_bonus_active(chore, now=None):
+    """True if `chore`'s early bonus applies at `now` (defaults to local time)."""
+    if not chore.early_bonus:
+        return False
+    current_hour = (now or timezone.localtime()).hour
+    return EARLY_BONUS_START_HOUR <= current_hour < chore.bonus_end_time
+
+
+def early_bonus_points(chore):
+    """Extra points awarded for claiming `chore` early, as a Decimal."""
+    return chore.points * Decimal(EARLY_BONUS_PERCENT) / Decimal(100)
 
 
 class CustomUserCreationForm(UserCreationForm):
@@ -74,41 +85,22 @@ def profile(request):
 
 @login_required
 def settings(request):
+    # Settings model removed - redirect to parent profile
     if request.user.role == 'Parent':
-        context = {
-            'settings': models.Settings.objects.all()
-        }
-        response = render(request, 'settings.html', context)
-        response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
-        return response
+        return redirect('parent_profile')
     else:
         return redirect('child_profile')
-
-
-@login_required
-def edit_settings(request, pk):
-    if request.user.role != 'Parent':
-        return redirect('child_profile')
-    
-    try:
-        settings = safe_get_object_or_404(models.Settings, pk, "Settings not found")
-        if request.method == 'POST':
-            form = forms.EditSettingsForm(request.POST, instance=settings)
-            if form.is_valid():
-                form.save()
-                return redirect('settings')
-        else:
-            form = forms.EditSettingsForm(instance=settings)
-        return render(request, 'edit_settings.html', {'form': form, 'settings': settings})
-    except (models.Settings.DoesNotExist, Exception) as e:
-        logger.error(f"Error in edit_settings: {e}")
-        return redirect('parent_profile')
 
 @login_required
 def messages(request):
     if request.user.role == 'Parent':
+        # There is no "create Text" screen, so make sure the row the child
+        # dashboard reads always exists and is therefore editable here.
+        models.Text.objects.get_or_create(key=DAILY_MESSAGE_KEY)
+        # Named 'texts', not 'messages': the latter collides with the
+        # django.contrib.messages context processor.
         context = {
-            'messages': models.Text.objects.all()
+            'texts': models.Text.objects.all().order_by('key')
         }
         response = render(request, 'messages.html', context)
         response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
@@ -121,19 +113,15 @@ def edit_text(request, pk):
     if request.user.role != 'Parent':
         return redirect('child_profile')
     
-    try:
-        text = safe_get_object_or_404(models.Text, pk, "Text not found")
-        if request.method == 'POST':
-            form = forms.EditTextForm(request.POST, instance=text)
-            if form.is_valid():
-                form.save()
-                return redirect('messages')
-        else:
-            form = forms.EditTextForm(instance=text)
-        return render(request, 'edit_text.html', {'form': form, 'text': text})
-    except (models.Text.DoesNotExist, Exception) as e:
-        logger.error(f"Error in edit_text: {e}")
-        return redirect('parent_profile')
+    text = safe_get_object_or_404(models.Text, pk, "Text not found")
+    if request.method == 'POST':
+        form = forms.EditTextForm(request.POST, instance=text)
+        if form.is_valid():
+            form.save()
+            return redirect('messages')
+    else:
+        form = forms.EditTextForm(instance=text)
+    return render(request, 'edit_text.html', {'form': form, 'text': text})
 
 @login_required
 def parent_profile(request):
@@ -145,26 +133,12 @@ def parent_profile(request):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
-    chore_points = models.PointLog.objects.filter(
-        date_recorded__date=timezone.localdate()
-    ).exclude(
-        chore=''
-    ).values(
-        'user', 'user__username'
-    ).annotate(
-        total_points=Sum('points_change')
-    ).order_by('-total_points')
-
-    daily_task_can_run = not has_run_today('chore_app.cron.nightly_action')
-
     context = {
         'available_chores': models.Chore.objects.filter(available=True),
         'unavailable_chores': models.Chore.objects.filter(available=False),
         'claimed_chores': models.ChoreClaim.objects.filter(approved=0).select_related('chore', 'user'),
-        'chore_points': chore_points,
         'point_logs': page_obj,
         'children': models.User.objects.filter(role='Child'),
-        'daily_task_can_run': daily_task_can_run
     }
     response = render(request, 'parent_profile.html', context)
     response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
@@ -173,24 +147,11 @@ def parent_profile(request):
 
 @login_required
 def child_profile(request):
-    current_time = timezone.localtime().time()
-    current_hour = current_time.hour
-
     point_logs = models.PointLog.objects.filter(
         user=request.user).order_by('-date_recorded')
     paginator = Paginator(point_logs, CHILD_POINT_LOGS_PER_PAGE)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-
-    chore_points = models.PointLog.objects.filter(
-        date_recorded__date=timezone.localdate()
-    ).exclude(
-        chore=''
-    ).values(
-        'user', 'user__username'
-    ).annotate(
-        total_points=Sum('points_change')
-    ).order_by('-total_points')
 
     # Optimize queries to avoid N+1 problems
     chores = models.Chore.objects.filter(available=True).prefetch_related('assigned_children')
@@ -200,84 +161,31 @@ def child_profile(request):
     # Get claimed chore names for filtering
     claimed_chore_names = list(claimed_chores.values_list('chore_name', flat=True))
     
-    # Get chores claimed by other children for "any_selected" tasks
-    # This prevents other selected children from seeing tasks already claimed by someone else
-    claimed_by_others = models.ChoreClaim.objects.filter(
-        chore__assignment_type='any_selected',
-        chore__assigned_children=request.user
-    ).values_list('chore', flat=True)
-    
-    # Filter chores based on assignment type and user eligibility using database queries
-    # Use Q objects to combine conditions instead of union
-    eligible_chores_qs = chores.filter(
-        Q(assignment_type__in=['any_child', 'all_children']) |
-        Q(assignment_type__in=['any_selected', 'all_selected'], assigned_children=request.user)
-    )
-    
-    # Apply time-based filtering
-    # Available chores: always available OR (positive time and current time >= available_time) OR (negative time and current time <= abs(available_time))
-    available_time_filter = (
-        Q(available_time__exact=ALWAYS_AVAILABLE_TIME) |
-        Q(available_time__gte=0, available_time__lte=current_hour) |
-        Q(available_time__lt=0, available_time__lte=-current_hour)
-    )
-    
-    # Future chores: positive time and current time < available_time
-    future_time_filter = Q(available_time__gte=0, available_time__gt=current_hour)
-    
-    # Missed chores: negative time and current time > abs(available_time)
-    # For negative available_time, missed means current_time.hour > abs(available_time)
-    # This means: available_time < 0 AND current_time.hour > abs(available_time)
-    # Which is equivalent to: available_time < 0 AND -available_time < current_time.hour
-    # In Django Q: available_time < 0 AND -available_time < current_hour
-    # Which is: available_time < 0 AND available_time > -current_hour
-    missed_time_filter = Q(available_time__lt=0) & Q(available_time__gt=-current_hour)
-    
-    # The issue is that both available and missed conditions can be true for the same chore
-    # We need to prioritize missed over available for negative time values
-    # So available should exclude missed chores
-    available_time_filter = available_time_filter & ~missed_time_filter
-    
-    filtered_chores = eligible_chores_qs.exclude(
+    # Filter chores: show if assigned to this child, or if no children assigned (available to all).
+    # distinct() is required: the OR across the assigned_children join can duplicate rows.
+    filtered_chores = chores.exclude(
         name__in=claimed_chore_names
-    ).exclude(
-        id__in=claimed_by_others
-    ).filter(available_time_filter)
-    
-    future_chores = eligible_chores_qs.exclude(
-        name__in=claimed_chore_names
-    ).exclude(
-        id__in=claimed_by_others
-    ).filter(future_time_filter)
-    
-    missed_chores = eligible_chores_qs.exclude(
-        name__in=claimed_chore_names
-    ).exclude(
-        id__in=claimed_by_others
-    ).filter(missed_time_filter)
-    
-
-    settings = {setting.key: setting.value for setting in models.Settings.objects.all()}
+    ).filter(
+        Q(assigned_children=request.user) | Q(assigned_children__isnull=True)
+    ).distinct()
 
     claimed_chore_ids = set(claimed_chores.exclude(chore__isnull=True).values_list('chore_id', flat=True))
 
+    # Resolve the early bonus here rather than in the template: template `{% now %}`
+    # yields a string, which cannot be compared against the integer bonus_end_time.
+    now = timezone.localtime()
+    chore_list = list(filtered_chores)
+    for chore in chore_list:
+        chore.bonus_active = early_bonus_active(chore, now)
+        chore.bonus_points = early_bonus_points(chore) if chore.bonus_active else None
+
     context = {
-        'minimum_points': settings.get('max_points', 0) / 2,
-        'pocket_money': request.user.pocket_money / 100,
-        'pocket_money_amount': settings.get('point_value', 0),
         'points': request.user.points_balance,
-        'chores': filtered_chores,
-        'chore_points': chore_points,
-        'point_logs': page_obj,  # Use the paginated page_obj instead of the original queryset
+        'chores': chore_list,
+        'point_logs': page_obj,
         'claimed_chores': claimed_chores,
         'claimed_chore_ids': claimed_chore_ids,
-        'future_chores': future_chores,
-        'missed_chores': missed_chores,
-        'max_points': settings.get('max_points', 0),
-        'min_points': settings.get('min_points', 0),
-        'leaderboard_awards': settings.get('leaderboard_awards', 0),
-        'incomplete_chores_penalty': settings.get('incomplete_chores_penalty', 0),
-        'daily_message': models.Text.objects.get(key='daily_message')
+        'daily_message': models.Text.objects.filter(key=DAILY_MESSAGE_KEY).first(),
     }
     response = render(request, 'child_profile.html', context)
     response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
@@ -309,20 +217,21 @@ def edit_chore(request, pk):
     
     try:
         chore = models.Chore.objects.get(pk=pk)
-        if request.method == 'POST':
-            form = forms.EditChoreForm(request.POST, instance=chore)
-            if form.is_valid():
-                form.save()
-                django_messages.success(request, 'Chore updated successfully!')
-                return redirect('parent_profile')
-        else:
-            form = forms.EditChoreForm(instance=chore)
-        
-        children = models.User.objects.filter(role='Child')
-        return render(request, 'edit_chore.html', {'form': form, 'chore': chore, 'children': children})
-    except (models.Chore.DoesNotExist, Exception) as e:
-        logger.error(f"Error in edit_chore: {e}")
+    except models.Chore.DoesNotExist:
+        django_messages.error(request, 'Chore not found.')
         return redirect('parent_profile')
+
+    if request.method == 'POST':
+        form = forms.EditChoreForm(request.POST, instance=chore)
+        if form.is_valid():
+            form.save()
+            django_messages.success(request, 'Chore updated successfully!')
+            return redirect('parent_profile')
+    else:
+        form = forms.EditChoreForm(instance=chore)
+
+    children = models.User.objects.filter(role='Child')
+    return render(request, 'edit_chore.html', {'form': form, 'chore': chore, 'children': children})
 
 
 @login_required
@@ -337,75 +246,15 @@ def toggle_availability(request, pk):
         chore.save()
         status = "available" if chore.available else "unavailable"
         django_messages.success(request, f'Chore is now {status}!')
-    except (models.Chore.DoesNotExist, Exception) as e:
-        logger.error(f"Error in toggle_availability: {e}")
+    except models.Chore.DoesNotExist:
+        django_messages.error(request, 'Chore not found.')
+    except Exception:
+        logger.exception("Error in toggle_availability")
         django_messages.error(request, 'Error updating chore availability.')
     return redirect('parent_profile')
 
 
-@login_required
-@require_POST
-def convert_points_to_money(request, pk):
-    if request.user.role != 'Child' or request.user.pk != pk:
-        return redirect('child_profile')
 
-    if request.method == 'POST':
-        try:
-            with transaction.atomic():
-                user = models.User.objects.select_for_update().get(pk=pk)
-
-                # Get required settings
-                try:
-                    max_points_setting = models.Settings.objects.get(key='max_points')
-                    point_value_setting = models.Settings.objects.get(key='point_value')
-                except models.Settings.DoesNotExist as e:
-                    logger.error(f"Required setting not found: {e}")
-                    django_messages.error(request, 'System configuration error. Please contact administrator.')
-                    return redirect('child_profile')
-
-                original_balance = user.points_balance
-                minimum_points = max_points_setting.value / 2
-
-                logger.info(f"Convert points to money for {user.username}: original_balance={original_balance}, minimum_points={minimum_points}, conversion_rate={POINTS_TO_MONEY_CONVERSION_RATE}")
-
-                # Validate user has enough points
-                if user.points_balance < minimum_points:
-                    logger.warning(f"Insufficient points for conversion: {user.points_balance} < {minimum_points}")
-                    django_messages.warning(request, f'You need at least {minimum_points} points to convert to money.')
-                    return redirect('child_profile')
-
-                # Validate user has enough points for conversion
-                if user.points_balance < POINTS_TO_MONEY_CONVERSION_RATE:
-                    logger.warning(f"Insufficient points for conversion rate: {user.points_balance} < {POINTS_TO_MONEY_CONVERSION_RATE}")
-                    django_messages.warning(request, f'You need at least {POINTS_TO_MONEY_CONVERSION_RATE} points to convert.')
-                    return redirect('child_profile')
-
-                # Calculate money amount
-                money_amount = POINTS_TO_MONEY_CONVERSION_RATE * point_value_setting.value
-
-                # Update user's balance
-                user.pocket_money += money_amount
-                user.points_balance -= POINTS_TO_MONEY_CONVERSION_RATE
-                user.save()
-
-                logger.info(f"After conversion for {user.username}: new_balance={user.points_balance}, added_money={money_amount}")
-
-                # Create point log entry
-                models.PointLog.objects.create(
-                    user=user,
-                    points_change=-POINTS_TO_MONEY_CONVERSION_RATE,
-                    penalty=0,
-                    reason='Conversion to Pocket Money',
-                    chore='',
-                    approver=user
-                )
-                django_messages.success(request, f'Successfully converted {POINTS_TO_MONEY_CONVERSION_RATE} points to ${money_amount:.2f} pocket money!')
-
-        except (models.User.DoesNotExist, Exception) as e:
-            logger.error(f"Error in convert_points_to_money: {e}")
-            django_messages.error(request, 'Error converting points to money.')
-
-    return redirect('child_profile')
 
 
 @login_required
@@ -415,69 +264,42 @@ def delete_chore(request, pk):
         return redirect('child_profile')
     
     try:
-        chore = models.Chore.objects.get(pk=pk)
-        chore.delete()
-    except (models.Chore.DoesNotExist, Exception) as e:
-        logger.error(f"Error in delete_chore: {e}")
+        models.Chore.objects.get(pk=pk).delete()
+        django_messages.success(request, 'Chore deleted.')
+    except models.Chore.DoesNotExist:
+        django_messages.error(request, 'Chore not found.')
+    except Exception:
+        logger.exception("Error in delete_chore")
+        django_messages.error(request, 'Error deleting chore.')
     return redirect('parent_profile')
 
-@login_required
-@require_POST
-def penalise_chore(request, pk):
-    if request.user.role != 'Parent':
-        return redirect('child_profile')
-    
-    try:
-        chore = models.Chore.objects.get(pk=pk)
-        chore.available = False
-        chore.save()
-        # Only penalise children who are assigned to this chore
-        if chore.assignment_type in ('any_selected', 'all_selected'):
-            children = chore.assigned_children.all()
-        else:
-            children = models.User.objects.filter(role='Child')
-        for child in children:
-            models.ChoreClaim.objects.create(
-                chore=chore, user=child, chore_name=chore.name, points=(-chore.points), approved=(-chore.points), comment='Penalty for incomplete chore'
-            )
-    except (models.Chore.DoesNotExist, Exception) as e:
-        logger.error(f"Error in penalise_chore: {e}")
-    return redirect('parent_profile')
+
 
 
 @login_required
 @require_POST
 def claim_chore(request, pk):
+    if request.user.role != 'Child':
+        return redirect('parent_profile')
+
     try:
-        current_time = timezone.localtime().time()
-        
         with transaction.atomic():
-            # Use select_for_update to prevent race conditions
             chore = models.Chore.objects.select_for_update().get(pk=pk)
             
             if not chore.available:
                 django_messages.warning(request, 'This chore is no longer available.')
                 return redirect('child_profile')
             
-            # Check if user is allowed to claim this chore based on assignment type
-            can_claim = False
-            if chore.assignment_type == 'any_child':
-                can_claim = True
-            elif chore.assignment_type == 'all_children':
-                can_claim = True
-            elif chore.assignment_type == 'any_selected':
-                can_claim = chore.assigned_children.filter(id=request.user.id).exists()
-            elif chore.assignment_type == 'all_selected':
-                can_claim = chore.assigned_children.filter(id=request.user.id).exists()
-            
-            if not can_claim:
-                django_messages.warning(request, 'You are not allowed to claim this chore.')
-                return redirect('child_profile')
+            # Check eligibility: assigned children only, or any child if none assigned
+            if chore.assigned_children.exists():
+                if not chore.assigned_children.filter(id=request.user.id).exists():
+                    django_messages.warning(request, 'You are not allowed to claim this chore.')
+                    return redirect('child_profile')
             
             # Check if user has already claimed this chore
             existing_claim = models.ChoreClaim.objects.filter(
-                chore=chore, 
-                user=request.user, 
+                chore=chore,
+                user=request.user,
                 approved=0
             ).exists()
             
@@ -486,58 +308,36 @@ def claim_chore(request, pk):
                 return redirect('child_profile')
             
             # Calculate points and bonus
-            if current_time < datetime.time(chore.bonus_end_time) \
-                    and current_time >= datetime.time(EARLY_BONUS_START_HOUR) \
-                    and chore.early_bonus:
-                try:
-                    bonus_percent = models.Settings.objects.get(key='bonus_percent').value
-                    addPoints = chore.points * ((bonus_percent + 100) / 100)
-                    bonus_points = addPoints - chore.points
-                    comment = f'Early Bonus of {bonus_points:.0f} points: {chore.comment}'
-                except models.Settings.DoesNotExist:
-                    addPoints = chore.points
-                    comment = chore.comment
-            else:
-                addPoints = chore.points
-                comment = chore.comment
-            
+            addPoints = chore.points
+            comment = chore.comment
+            if early_bonus_active(chore):
+                bonus_points = early_bonus_points(chore)
+                addPoints = chore.points + bonus_points
+                comment = f'Early Bonus of {bonus_points:.0f} points: {chore.comment}'
+
             # Create the chore claim
             models.ChoreClaim.objects.create(
-                chore=chore, 
-                user=request.user, 
-                chore_name=chore.name, 
-                points=addPoints, 
+                chore=chore,
+                user=request.user,
+                chore_name=chore.name,
+                points=addPoints,
                 comment=comment
             )
             
-            # Determine if chore should remain available after being claimed
-            if chore.assignment_type == 'any_child':
+            # Chore becomes unavailable after being claimed, unless several children
+            # were assigned to it and each still owes their own claim.
+            if chore.assigned_children.count() <= 1:
                 chore.available = False
                 chore.save()
-            elif chore.assignment_type == 'all_children':
-                # Keep available for all children
-                pass
-            elif chore.assignment_type == 'any_selected':
-                # For "Any of Selected Children", hide after ANY selected child claims it
-                chore.available = False
-                chore.save()
-            elif chore.assignment_type == 'all_selected':
-                # For "All of Selected Children", only hide after ALL selected children claim it
-                selected_children = chore.assigned_children.all()
-                claimed_by_selected = models.ChoreClaim.objects.filter(
-                    chore=chore, 
-                    user__in=selected_children
-                ).values_list('user', flat=True).distinct()
-                if set(claimed_by_selected) == set(selected_children.values_list('id', flat=True)):
-                    chore.available = False
-                    chore.save()
-            
+
             django_messages.success(request, f'Successfully claimed "{chore.name}"!')
             
-    except (models.Chore.DoesNotExist, models.Settings.DoesNotExist, Exception) as e:
-        logger.error(f"Error in claim_chore: {e}")
+    except models.Chore.DoesNotExist:
+        django_messages.error(request, 'Chore not found.')
+    except Exception:
+        logger.exception("Error in claim_chore")
         django_messages.error(request, 'Error claiming chore. Please try again.')
-    
+
     return redirect('child_profile')
 
 
@@ -545,67 +345,56 @@ def claim_chore(request, pk):
 @require_POST
 def return_chore(request, pk):
     try:
-        choreClaim = models.ChoreClaim.objects.get(pk=pk)
-        if choreClaim.approved == 0:
-            if choreClaim.chore:
-                try:
-                    chore = models.Chore.objects.get(pk=choreClaim.chore.pk)
-                    chore.available = True
-                    chore.save()
-                except (models.Chore.DoesNotExist, Exception) as e:
-                    logger.error(f"Error in return_chore (chore lookup): {e}")
-            choreClaim.delete()
-    except (models.ChoreClaim.DoesNotExist, Exception) as e:
-        logger.error(f"Error in return_chore: {e}")
+        with transaction.atomic():
+            # Scope to the requesting user: a claim pk alone must not let one child
+            # return another child's claim.
+            choreClaim = models.ChoreClaim.objects.select_for_update().get(
+                pk=pk, user=request.user)
+            if choreClaim.approved == 0:
+                if choreClaim.chore:
+                    choreClaim.chore.available = True
+                    choreClaim.chore.save()
+                choreClaim.delete()
+    except models.ChoreClaim.DoesNotExist:
+        django_messages.error(request, 'Claimed chore not found.')
+    except Exception:
+        logger.exception("Error in return_chore")
+        django_messages.error(request, 'Error returning chore.')
     return redirect('child_profile')
 
 
 @login_required
-def approve_chore_claim(request, pk, penalty, auto=False):
-    if not auto and request.user.role != 'Parent':
+def approve_chore_claim(request, pk):
+    if request.user.role != 'Parent':
         return redirect('child_profile')
     
-    if request.method == 'POST' or auto:
+    if request.method == 'POST':
         try:
             with transaction.atomic():
-                # Validate penalty is within acceptable range
-                if penalty < 0 or penalty > 100:
-                    if not auto:
-                        django_messages.error(request, 'Invalid penalty percentage.')
-                        return redirect('parent_profile')
-                    else:
-                        logger.error(f"Invalid penalty percentage: {penalty}")
-                        return HttpResponse("Error: Invalid penalty")
-                
                 choreClaim = models.ChoreClaim.objects.select_for_update().get(pk=pk)
                 
                 # Check if already processed
                 if choreClaim.approved != 0:
-                    if not auto:
-                        django_messages.warning(request, 'This chore claim has already been processed.')
-                        return redirect('parent_profile')
-                    else:
-                        logger.warning(f"Chore claim {pk} already processed")
-                        return HttpResponse("Already processed")
+                    django_messages.warning(request, 'This chore claim has already been processed.')
+                    return redirect('parent_profile')
                 
-                approver = request.user if not auto else None
-                # Convert penalty to Decimal to avoid type errors
-                from decimal import Decimal
-                penalty_decimal = Decimal(str(penalty))
-                points_awarded = choreClaim.points - (choreClaim.points * (penalty_decimal / 100))
-                
-                # Validate points_awarded is not negative
-                if points_awarded < 0:
-                    points_awarded = 0
-                
+                points_awarded = choreClaim.points
+
+                # `approved` doubles as the flag and the amount, so a zero-point
+                # claim would stay pending and could be approved (and paid) twice.
+                if points_awarded == 0:
+                    django_messages.error(
+                        request,
+                        'This claim is worth 0 points. Adjust the points before approving.')
+                    return redirect('parent_profile')
+
                 # Create point log entry
                 models.PointLog.objects.create(
-                    user=choreClaim.user, 
-                    points_change=points_awarded, 
-                    penalty=penalty, 
-                    reason='Approved', 
-                    chore=choreClaim.chore_name, 
-                    approver=approver
+                    user=choreClaim.user,
+                    points_change=points_awarded,
+                    reason='Approved',
+                    chore=choreClaim.chore_name,
+                    approver=request.user
                 )
                 
                 # Update user's points balance
@@ -622,37 +411,20 @@ def approve_chore_claim(request, pk, penalty, auto=False):
                     choreClaim.chore.available = False
                     choreClaim.chore.save()
                 
-                if not auto:
-                    django_messages.success(request, f'Chore claim approved for {points_awarded} points!')
+                django_messages.success(request, f'Chore claim approved for {points_awarded} points!')
                 
         except models.ChoreClaim.DoesNotExist:
-            if not auto:
-                django_messages.error(request, 'Chore claim not found.')
-                return redirect('parent_profile')
-            else:
-                logger.error(f"Chore claim {pk} not found")
-                return HttpResponse("Error: Chore claim not found")
+            django_messages.error(request, 'Chore claim not found.')
+            return redirect('parent_profile')
         except models.User.DoesNotExist:
-            if not auto:
-                django_messages.error(request, 'User not found.')
-                return redirect('parent_profile')
-            else:
-                logger.error(f"User not found for chore claim {pk}")
-                return HttpResponse("Error: User not found")
-        except Exception as e:
-            if not auto:
-                logger.error(f"Error in approve_chore_claim: {e}")
-                django_messages.error(request, 'Error approving chore claim.')
-                return redirect('parent_profile')
-            else:
-                logger.error(f"Error in approve_chore_claim (auto): {e}")
-                return HttpResponse("Error: Internal error")
+            django_messages.error(request, 'User not found.')
+            return redirect('parent_profile')
+        except Exception:
+            logger.exception("Error in approve_chore_claim")
+            django_messages.error(request, 'Error approving chore claim.')
+            return redirect('parent_profile')
     
-    if not auto:
-        return redirect('parent_profile')
-    else:
-        # For auto mode, return a simple success response
-        return HttpResponse("OK")
+    return redirect('parent_profile')
 
 @login_required
 @require_POST
@@ -661,19 +433,24 @@ def reject_chore_claim(request, pk):
         return redirect('child_profile')
     
     try:
-        choreClaim = models.ChoreClaim.objects.get(pk=pk)
-        if choreClaim.chore:
-            try:
-                chore = models.Chore.objects.get(pk=choreClaim.chore.pk)
-                chore.available = True
-                chore.save()
-            except (models.Chore.DoesNotExist, Exception) as e:
-                logger.error(f"Error in reject_chore_claim (chore lookup): {e}")
-        models.PointLog.objects.create(user=choreClaim.user, points_change=0, penalty=REJECTION_PENALTY,
-                                       reason='Rejected', chore=choreClaim.chore_name, approver=request.user)
-        choreClaim.delete()
-    except (models.ChoreClaim.DoesNotExist, Exception) as e:
-        logger.error(f"Error in reject_chore_claim: {e}")
+        with transaction.atomic():
+            choreClaim = models.ChoreClaim.objects.select_for_update().get(pk=pk)
+            if choreClaim.approved != 0:
+                django_messages.warning(request, 'This chore claim has already been processed.')
+                return redirect('parent_profile')
+            if choreClaim.chore:
+                choreClaim.chore.available = True
+                choreClaim.chore.save()
+            models.PointLog.objects.create(
+                user=choreClaim.user, points_change=0, reason='Rejected',
+                chore=choreClaim.chore_name, approver=request.user)
+            choreClaim.delete()
+            django_messages.success(request, 'Chore claim rejected.')
+    except models.ChoreClaim.DoesNotExist:
+        django_messages.error(request, 'Chore claim not found.')
+    except Exception:
+        logger.exception("Error in reject_chore_claim")
+        django_messages.error(request, 'Error rejecting chore claim.')
     return redirect('parent_profile')
 
 
@@ -682,48 +459,46 @@ def point_adjustment(request, pk):
     if request.user.role != 'Parent':
         return redirect('child_profile')
 
+    try:
+        child = models.User.objects.get(pk=pk, role='Child')
+    except models.User.DoesNotExist:
+        django_messages.error(request, 'Child not found.')
+        return redirect('parent_profile')
+
     if request.method == 'POST':
         form = forms.PointAdjustmentForm(request.POST)
         if form.is_valid():
-            user = models.User.objects.get(pk=pk)
             points_change = form.cleaned_data['points_change']
-            original_balance = user.points_balance
-            new_balance = original_balance + points_change
+            with transaction.atomic():
+                # Re-read under lock so concurrent approvals cannot clobber the balance.
+                user = models.User.objects.select_for_update().get(pk=child.pk)
+                point_log = form.save(commit=False)
+                point_log.user = user
+                point_log.approver = request.user
+                point_log.chore = point_log.chore or 'Manual adjustment'
+                point_log.save()
 
-            logger.info(f"Point adjustment for {user.username}: original_balance={original_balance}, change={points_change}, new_balance={new_balance}")
+                user.points_balance += points_change
+                user.save()
 
-            point_log = form.save(commit=False)
-            point_log.user = user
-            point_log.approver = request.user
-            point_log.save()
-
-            user.points_balance += points_change
-            user.save()
+            logger.info(
+                "Point adjustment for %s by %s: change=%s",
+                user.username, request.user.username, points_change)
+            django_messages.success(
+                request, f'Adjusted {user.username} by {points_change} points.')
             return redirect('parent_profile')
     else:
         form = forms.PointAdjustmentForm()
-    return render(request, 'point_adjustment.html', {'form': form})
+    return render(request, 'point_adjustment.html', {'form': form, 'child': child})
 
 
-@login_required
-def pocket_money_adjustment(request, pk):
-    if request.user.role != 'Parent':
-        return redirect('child_profile')
-    
-    if request.method == 'POST':
-        form = forms.PocketMoneyAdjustmentForm(request.POST)
-        if form.is_valid():
-            user = models.User.objects.get(pk=pk)
-            # Convert dollars to cents for storage (pocket_money is stored in cents)
-            user.pocket_money += form.cleaned_data['pocket_money'] * 100
-            user.save()
-            return redirect('parent_profile')
-    else:
-        form = forms.PocketMoneyAdjustmentForm()
-    return render(request, 'pocket_money_adjustment.html', {'form': form})
+
 
 @login_required
 def child_chore(request):
+    if request.user.role != 'Child':
+        return redirect('parent_profile')
+
     if request.method == 'POST':
         form = forms.CustomChildChore(request.POST)
         if form.is_valid():
@@ -735,24 +510,182 @@ def child_chore(request):
         form = forms.CustomChildChore()
     return render(request, 'child_chore.html', {'form': form})
 
+
+# ==================== Rewards System ====================
+
 @login_required
-def daily_action(request):
-    # Check if the daily task has already been run today
-    if has_run_today('chore_app.cron.nightly_action'):
-        # If it has already run, redirect back to parent profile with an error message
-        django_messages.error(request, 'Daily action has already been run today.')
-        return redirect('parent_profile')
-    
-    # Only allow parents to run the daily action
+def rewards_list(request):
+    """
+    List all available rewards.
+    For parents: shows all rewards with management options.
+    For children: shows only available, unredeemed rewards they can afford.
+    """
+    if request.user.role == 'Parent':
+        rewards = models.Reward.objects.all().order_by('points_cost')
+        context = {
+            'rewards': rewards,
+            'is_parent': True,
+        }
+    else:
+        # Children see only available rewards they haven't already claimed
+        rewards = models.Reward.objects.filter(available=True).exclude(
+            Q(availability_type=models.Reward.AVAILABILITY_ONCE, redeemed_by__isnull=False)
+        ).exclude(
+            Q(availability_type=models.Reward.AVAILABILITY_ONCE_PER_CHILD, redeemed_by_children=request.user)
+        ).order_by('points_cost').distinct()
+        context = {
+            'rewards': rewards,
+            'is_parent': False,
+            'user_points': request.user.points_balance,
+        }
+    response = render(request, 'rewards_list.html', context)
+    response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    return response
+
+
+@login_required
+def create_reward(request):
     if request.user.role != 'Parent':
-        django_messages.error(request, 'Only parents can run the daily action.')
+        return redirect('child_profile')
+    
+    if request.method == 'POST':
+        form = forms.RewardForm(request.POST)
+        if form.is_valid():
+            form.save()
+            django_messages.success(request, 'Reward created successfully!')
+            return redirect('rewards_list')
+    else:
+        form = forms.RewardForm()
+    
+    return render(request, 'create_reward.html', {'form': form})
+
+
+@login_required
+def edit_reward(request, pk):
+    if request.user.role != 'Parent':
         return redirect('child_profile')
     
     try:
-        nightly_action(approver=request.user)
-        django_messages.success(request, 'Daily action completed successfully!')
-    except Exception as e:
-        logger.error(f"Error in daily_action: {e}", exc_info=True)
-        django_messages.error(request, f'An error occurred during the daily action: {str(e)}. Please check the logs for details.')
+        reward = models.Reward.objects.get(pk=pk)
+    except models.Reward.DoesNotExist:
+        django_messages.error(request, 'Reward not found.')
+        return redirect('rewards_list')
+
+    if request.method == 'POST':
+        form = forms.RewardForm(request.POST, instance=reward)
+        if form.is_valid():
+            form.save()
+            django_messages.success(request, 'Reward updated successfully!')
+            return redirect('rewards_list')
+    else:
+        form = forms.RewardForm(instance=reward)
+
+    return render(request, 'edit_reward.html', {'form': form, 'reward': reward})
+
+
+@login_required
+@require_POST
+def delete_reward(request, pk):
+    if request.user.role != 'Parent':
+        return redirect('child_profile')
     
-    return redirect('parent_profile')
+    try:
+        reward = models.Reward.objects.get(pk=pk)
+        reward.delete()
+        django_messages.success(request, 'Reward deleted successfully!')
+    except models.Reward.DoesNotExist:
+        django_messages.error(request, 'Reward not found.')
+    except Exception:
+        logger.exception("Error in delete_reward")
+        django_messages.error(request, 'Error deleting reward.')
+    return redirect('rewards_list')
+
+
+@login_required
+@require_POST
+def toggle_reward_availability(request, pk):
+    if request.user.role != 'Parent':
+        return redirect('child_profile')
+    
+    try:
+        reward = models.Reward.objects.get(pk=pk)
+        reward.available = not reward.available
+        reward.save()
+        status = "available" if reward.available else "unavailable"
+        django_messages.success(request, f'Reward is now {status}!')
+    except models.Reward.DoesNotExist:
+        django_messages.error(request, 'Reward not found.')
+    except Exception:
+        logger.exception("Error in toggle_reward_availability")
+        django_messages.error(request, 'Error updating reward availability.')
+    return redirect('rewards_list')
+
+
+@login_required
+@require_POST
+def claim_reward(request, pk):
+    """
+    Child claims a reward by spending points.
+    Marks the reward as redeemed_by this user (one-time use).
+    """
+    if request.user.role != 'Child':
+        return redirect('rewards_list')
+
+    try:
+        with transaction.atomic():
+            reward = models.Reward.objects.select_for_update().get(pk=pk)
+            
+            # Check if reward is available
+            if not reward.available:
+                django_messages.warning(request, 'This reward is no longer available.')
+                return redirect('rewards_list')
+            
+            # Check if already redeemed, based on the reward's availability type
+            if reward.availability_type == models.Reward.AVAILABILITY_ONCE and reward.redeemed_by is not None:
+                django_messages.warning(request, 'This reward has already been claimed.')
+                return redirect('rewards_list')
+            if reward.availability_type == models.Reward.AVAILABILITY_ONCE_PER_CHILD \
+                    and reward.redeemed_by_children.filter(pk=request.user.pk).exists():
+                django_messages.warning(request, 'You have already claimed this reward.')
+                return redirect('rewards_list')
+
+            # Check if user has enough points
+            user = models.User.objects.select_for_update().get(pk=request.user.pk)
+            if user.points_balance < reward.points_cost:
+                django_messages.warning(
+                    request,
+                    f'You do not have enough points. You need {reward.points_cost:.0f} points but only have {user.points_balance:.0f}.'
+                )
+                return redirect('rewards_list')
+            
+            # Deduct points
+            user.points_balance -= reward.points_cost
+            user.save()
+            
+            # Log the point deduction
+            models.PointLog.objects.create(
+                user=user,
+                points_change=-reward.points_cost,
+                reason=f'Reward claimed: {reward.name}',
+                chore=reward.name,
+                approver=None  # self-service; no parent approves a reward claim
+            )
+            
+            # Mark reward as redeemed, based on its availability type
+            if reward.availability_type == models.Reward.AVAILABILITY_ONCE:
+                reward.redeemed_by = user
+                reward.save()
+            elif reward.availability_type == models.Reward.AVAILABILITY_ONCE_PER_CHILD:
+                reward.redeemed_by_children.add(user)
+
+            django_messages.success(request, f'You have claimed "{reward.name}"! Enjoy your reward.')
+    
+    except models.Reward.DoesNotExist:
+        django_messages.error(request, 'Reward not found.')
+    except Exception:
+        logger.exception("Error in claim_reward")
+        django_messages.error(request, 'Error claiming reward. Please try again.')
+    
+    return redirect('rewards_list')
+
+

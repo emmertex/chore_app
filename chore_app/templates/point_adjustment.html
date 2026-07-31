@@ -11,7 +11,8 @@
     <div class="page-container">
       <div class="content-wrapper">
         <div class="form-block">
-          <h1>Adjust Points</h1>
+          <h1>Adjust Points{% if child %} &mdash; {{ child.username|title }}{% endif %}</h1>
+          {% if child %}<p class="small-text">Current balance: {{ child.points_balance }}</p>{% endif %}
           <form method="post">
             {% csrf_token %}
             <div class="form-fields">

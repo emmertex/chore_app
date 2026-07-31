@@ -13,11 +13,13 @@
         <div class="block">
           <h2>Messages</h2>
 
-          {% for message in messages %}
-            <div class="innerBlock" onclick="window.location.href='{% url 'edit_text' message.pk %}'">
+          {% for text in texts %}
+            <div class="innerBlock" onclick="window.location.href='{% url 'edit_text' text.pk %}'">
               <div class="buttonContainer">
-                <div class="choreLeft">{{ message.text }}</div>
-                <div class="choreRightClaimed">{% if message.enabled %}Enabled{% else %}Disabled{% endif %}</div>
+                <div class="choreLeft">{{ text.key }}
+                  <div class="small-text description">{{ text.text|default:"(empty)" }}</div>
+                </div>
+                <div class="choreRightClaimed">{% if text.enabled %}Enabled{% else %}Disabled{% endif %}</div>
               </div>
             </div>
           {% endfor %}

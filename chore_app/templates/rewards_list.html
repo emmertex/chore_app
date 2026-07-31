@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Rewards Catalog</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'styles.css' %}" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  </head>
+
+  <body>
+    <div class="page-container">
+      <div class="content-wrapper">
+        <div class="container">
+
+          {% if messages %}
+          <div class="toast-container">
+              {% for message in messages %}
+              <div class="toast {{ message.tags }}" onclick="this.style.animation='slideOut 0.3s ease-out'; setTimeout(() => this.remove(), 300);">
+                  {{ message }}
+              </div>
+              {% endfor %}
+          </div>
+          {% endif %}
+
+          <div class="bigblock">
+            <h1>Rewards Catalog</h1>
+          </div>
+
+          {% if is_parent %}
+
+            <div class="block">
+              <h3>Actions</h3>
+              <div class="innerBlock" onclick="window.location.href='{% url 'create_reward' %}'">Create New Reward</div>
+              <div class="innerBlock" onclick="window.location.href='{% url 'parent_profile' %}'">Back to Dashboard</div>
+            </div>
+
+            <div class="block">
+              <h3>Rewards</h3>
+
+              {% if rewards %}
+                {% for reward in rewards %}
+                <div style="display: flex; flex-direction: row; align-items: stretch; gap: 10px;">
+                  <div class="innerBlock{% if not reward.available %} penalised{% endif %}" style="flex: 1; cursor: default;">
+                    <div class="buttonContainer">
+                      <div class="choreLeft">{{ reward.name }}
+                        <div class="small-text description">{{ reward.description|default:"" }}</div>
+                        <div class="small-text time">
+                          {{ reward.get_availability_type_display }}
+                          {% if reward.availability_type == 'once' %}
+                            &mdash; {% if reward.redeemed_by %}Claimed by {{ reward.redeemed_by.username|title }}{% else %}Not yet claimed{% endif %}
+                          {% elif reward.availability_type == 'once_per_child' %}
+                            &mdash; Claimed by:
+                            {% for child in reward.redeemed_by_children.all %}{{ child.username|title }}{% if not forloop.last %}, {% endif %}{% empty %}Nobody yet{% endfor %}
+                          {% endif %}
+                        </div>
+                      </div>
+                      <div class="choreRight">{{ reward.points_cost }}</div>
+                    </div>
+                  </div>
+                  <div class="innerBlock edit" id="reward-modal-{{ reward.pk }}">&#9998;
+                    <div class="chore-options" id="reward-options-{{ reward.pk }}" style="display: none;">
+                      <div class="block opaque">
+                        <div class="innerBlock" onclick="window.location.href='{% url 'edit_reward' reward.pk %}'">
+                          Edit
+                        </div>
+                        <form method="post" action="{% url 'toggle_reward_availability' reward.pk %}" style="display: inline;">
+                          {% csrf_token %}
+                          <div class="innerBlock" onclick="this.parentElement.submit()">
+                            {{ reward.available|yesno:"Make Unavailable,Make Available" }}
+                          </div>
+                        </form>
+                        <form method="post" action="{% url 'delete_reward' reward.pk %}" style="display: inline;">
+                          {% csrf_token %}
+                          <div class="innerBlock red" onclick="if(confirm('Are you sure you want to delete this reward?')){ this.parentElement.submit(); }">Delete Reward</div>
+                        </form>
+                        <div class="innerBlock" onclick="dismissModal()">Cancel</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                {% endfor %}
+              {% else %}
+                <p>No rewards created yet. Click "Create New Reward" to add one.</p>
+              {% endif %}
+            </div>
+
+          {% else %}
+            <!-- Child view -->
+            <div class="block">
+              <h3>Your Points</h3>
+              <span class="rainbow-text">{{ user_points }}</span>
+            </div>
+
+            <div class="block">
+              <h3>Actions</h3>
+              <div class="innerBlock" onclick="window.location.href='{% url 'child_profile' %}'">Back to My Profile</div>
+            </div>
+
+            <div class="block">
+              <h3>Available Rewards</h3>
+
+              {% if rewards %}
+                {% for reward in rewards %}
+                  {% if user_points >= reward.points_cost %}
+                  <form method="post" action="{% url 'claim_reward' reward.pk %}" onsubmit="return confirm('Claim this reward for {{ reward.points_cost }} points?');">
+                    {% csrf_token %}
+                    <div class="innerBlock" onclick="this.parentElement.submit()">
+                      <div class="buttonContainer">
+                        <div class="choreLeft">{{ reward.name }}
+                          <div class="small-text description">{{ reward.description|default:"" }}</div>
+                        </div>
+                        <div class="choreRight">{{ reward.points_cost }}</div>
+                      </div>
+                    </div>
+                  </form>
+                  {% else %}
+                  <div class="innerBlock" style="cursor: default; opacity: 0.5;">
+                    <div class="buttonContainer">
+                      <div class="choreLeft">{{ reward.name }}
+                        <div class="small-text description">{{ reward.description|default:"" }}</div>
+                        <div class="small-text time">Not enough points</div>
+                      </div>
+                      <div class="choreRight">{{ reward.points_cost }}</div>
+                    </div>
+                  </div>
+                  {% endif %}
+                {% endfor %}
+              {% else %}
+                <p>No rewards available right now. Ask a parent to add some!</p>
+              {% endif %}
+            </div>
+
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <script>
+      function initializeRewardModals() {
+        document.querySelectorAll('[id^="reward-modal-"]').forEach(function (modalTrigger) {
+          var pk = modalTrigger.id.split('-').pop();
+          var rewardOptions = document.getElementById('reward-options-' + pk);
+
+          modalTrigger.addEventListener('click', function (e) {
+            handleModalClick(e, rewardOptions);
+          });
+        });
+      }
+
+      function dismissModal() {
+      }
+
+      function handleModalClick(e, rewardOptions) {
+        e.preventDefault();
+        rewardOptions.style.display = (rewardOptions.style.display === 'block') ? 'none' : 'block';
+      }
+
+      document.addEventListener('DOMContentLoaded', initializeRewardModals);
+
+      // Auto-dismiss toast notifications after 5 seconds
+      document.addEventListener('DOMContentLoaded', function() {
+        const toasts = document.querySelectorAll('.toast');
+        toasts.forEach(function(toast) {
+          setTimeout(function() {
+            toast.style.animation = 'slideOut 0.3s ease-out';
+            setTimeout(function() {
+              toast.remove();
+            }, 300);
+          }, 5000);
+        });
+      });
+    </script>
+  </body>
+</html>

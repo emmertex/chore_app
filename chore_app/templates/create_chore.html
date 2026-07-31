@@ -7,20 +7,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <script>
       function toggleChildSelection() {
-        const assignmentType = document.getElementById('id_assignment_type').value;
+        const radios = document.querySelectorAll('input[name="assignment_type"]');
+        let selectedValue;
+        for (const radio of radios) {
+          if (radio.checked) {
+            selectedValue = radio.value;
+            break;
+          }
+        }
         const childSelection = document.getElementById('child-selection');
-        
-        if (assignmentType === 'any_selected' || assignmentType === 'all_selected') {
+
+        if (selectedValue === 'specific') {
           childSelection.style.display = 'block';
         } else {
           childSelection.style.display = 'none';
         }
       }
-      
+
       // Initialize on page load
       document.addEventListener('DOMContentLoaded', function() {
         toggleChildSelection();
-        document.getElementById('id_assignment_type').addEventListener('change', toggleChildSelection);
+        const radios = document.querySelectorAll('input[name="assignment_type"]');
+        radios.forEach(radio => radio.addEventListener('change', toggleChildSelection));
       });
     </script>
   </head>
@@ -32,6 +40,15 @@
           <h1>Create Chore</h1>
           <form method="post">
             {% csrf_token %}
+            {% if form.errors %}
+            <div class="innerBlock red">
+              <strong>Please correct the following:</strong>
+              {{ form.non_field_errors }}
+              {% for field in form %}{% for error in field.errors %}
+              <div class="small-text">{{ field.label }}: {{ error }}</div>
+              {% endfor %}{% endfor %}
+            </div>
+            {% endif %}
             <div class="form-fields">
               <p>
                 <label for="{{ form.name.id_for_label }}">{{ form.name.label }}:</label>
@@ -58,10 +75,17 @@
                 {{ form.daily }}
               </p>
               
-              <p>
-                <label for="{{ form.assignment_type.id_for_label }}">{{ form.assignment_type.label }}:</label>
-                {{ form.assignment_type }}
-              </p>
+              <div class="form-group">
+                <strong>{{ form.assignment_type.label }}</strong>
+                <div style="margin-top: 8px;">
+                  {% for radio in form.assignment_type %}
+                    <label style="display: inline-flex; align-items: center; gap: 6px; margin-right: 16px; cursor: pointer;">
+                      {{ radio.tag }}
+                      {{ radio.choice_label }}
+                    </label>
+                  {% endfor %}
+                </div>
+              </div>
               
               <div id="child-selection" style="display: none;">
                 <p>
@@ -82,10 +106,7 @@
                 {{ form.bonus_end_time }}
               </p>
               
-              <p>
-                <label for="{{ form.available_time.id_for_label }}">{{ form.available_time.label }}:</label>
-                {{ form.available_time }}
-              </p>
+
             </div>
             <div class="form-actions">
               <button type="submit">Create Chore</button>
