@@ -58,6 +58,15 @@ class PointLog(models.Model):
         ]
 
 
+class Settings(models.Model):
+    key = models.CharField(max_length=255, unique=True)
+    name = models.CharField(max_length=255, default="", blank=True)
+    value = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
+
+    def __str__(self):
+        return f"{self.key}: {self.value}"
+
+
 class Text(models.Model):
     key = models.CharField(max_length=255, unique=True)
     text = models.TextField(default="")

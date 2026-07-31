@@ -45,7 +45,8 @@ fi
 source venv/bin/activate
 echo "Installing Python dependencies..."
 pip install --upgrade pip
-pip install django django-allauth django-cron
+# Pin Django <5.1 for django-cron compatibility (django-cron 0.6.0 uses index_together, removed in 5.1+)
+pip install "django<5.1" django-allauth django-cron
 
 echo "Running migrations..."
 python manage.py makemigrations
